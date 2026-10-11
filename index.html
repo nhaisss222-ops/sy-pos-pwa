@@ -116,6 +116,8 @@ table{width:100%;border-collapse:collapse;font-size:13.5px}
 th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
 .clickable-row{cursor:pointer}
 .clickable-row:hover{background:#f6f8f7}
+#sumBody tr.sel{background:var(--accent-soft)}
+#sumBody tr.sel td:first-child{font-weight:700;color:var(--accent)}
 th{background:#f8faf9;font-size:12px;color:var(--muted);font-weight:600}
 td.num{text-align:right;font-variant-numeric:tabular-nums}
 tr.foot td{font-weight:700;background:#f8faf9;border-top:2px solid var(--line)}
@@ -369,10 +371,11 @@ details.inline .sec-body{padding:2px 12px 12px}
 <!-- ===== SUMMARY ===== -->
 <section class="view" id="view-summary">
 <div class="card">
-<h2>📊 ສະຫຼຸບລາຍເດືອນ <span class="chip" id="sumBranchChip" style="cursor:default"></span></h2>
-<label class="fld" style="max-width:200px;margin-bottom:12px">ເລືອກເດືອນ-ປີ
-<input type="month" id="sumMonth">
+<h2>📊 ສະຫຼຸບ <span class="chip" id="sumBranchChip" style="cursor:default"></span></h2>
+<label class="fld" style="max-width:220px;margin-bottom:12px">ເລືອກວັນທີ (ມື້ / ເດືອນ / ປີ)
+<input type="date" id="sumDate">
 </label>
+<div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:8px" id="sumDayLabel"></div>
 <div class="cards" id="sumCards"></div>
 <div class="grid2" style="margin-top:10px">
 <div>
@@ -385,6 +388,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 </div>
 </div>
 <div id="sumChart" style="margin:14px 0"></div>
+<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px" id="sumMonthLabel"></div>
 <div class="tbl-scroll">
 <table>
 <thead><tr><th>ວັນທີ</th><th style="text-align:right">ຂາຍເງິນສົດ</th><th style="text-align:right">ຂາຍເງິນໂອນ</th><th style="text-align:right">ລາຍຈ່າຍ</th><th style="text-align:right">ກຳໄລສຸດທິ</th></tr></thead>
@@ -628,7 +632,7 @@ function onBoot(data){
   renderTodaySales();
   $('eDate').value = todayStr();
   $('iDate').value = todayStr();
-  if (!$('sumMonth').value) $('sumMonth').value = monthStr();
+  if (!$('sumDate').value) $('sumDate').value = todayStr();
   $('expBranchLabel').textContent = branchName(STATE.currentBranch);
   $('incBranchLabel').textContent = branchName(STATE.currentBranch);
 }
@@ -651,6 +655,16 @@ function reloadAll(after){
 }
 
 /* ---------- stock lookup ---------- */
+function adjustLocalStock(branchId, productId, delta){
+  for (var i = 0; i < STATE.stock.length; i++) {
+    if (STATE.stock[i].ProductID === productId && STATE.stock[i].BranchID === branchId) {
+      STATE.stock[i].Qty = (Number(STATE.stock[i].Qty) || 0) + delta;
+      return;
+    }
+  }
+  STATE.stock.push({ ProductID: productId, BranchID: branchId, Qty: delta });
+}
+
 function stockQty(productId, branchId){
   for (var i = 0; i < STATE.stock.length; i++) {
     if (STATE.stock[i].ProductID === productId && STATE.stock[i].BranchID === branchId) return Number(STATE.stock[i].Qty) || 0;
@@ -681,7 +695,7 @@ function renderCatChips(){
 
 /* ---------- POS: product grid ---------- */
 $('posSearch').addEventListener('input', renderPOS);
-$('sumMonth').addEventListener('change', renderSummary);
+$('sumDate').addEventListener('change', renderSummary);
 
 function renderPOS(){
   var q = ($('posSearch').value || '').toLowerCase();
@@ -815,11 +829,13 @@ $('checkoutBtn').addEventListener('click', function(){
   var sale = { branchId: STATE.currentBranch, paymentType: payType, items: items, note: $('saleNote').value || '' };
   run('recordSale', [sale], function(res){
     toast('✅ ຂາຍສຳເລັດ ' + fmt(res.total) + ' ກີບ');
+    items.forEach(function(it){ adjustLocalStock(STATE.currentBranch, it.productId, -it.qty); });
     STATE.cart = [];
     $('saleNote').value = '';
     $('cartModal').classList.remove('show');
     renderCart();
-    reloadAll(function(){ renderTodaySales(); });
+    renderPOS();
+    renderTodaySales();
   });
 });
 
@@ -841,7 +857,7 @@ function renderTodaySales(){
       var tdBtn = tr.lastElementChild;
       var btn = document.createElement('button');
       btn.className = 'icon-btn'; btn.textContent = '🗑️';
-      btn.addEventListener('click', function(ev){ ev.stopPropagation(); confirmVoid(s.ID); });
+      btn.addEventListener('click', function(ev){ ev.stopPropagation(); confirmVoid(s.ID, s.BranchID, itemsBySale[s.ID] || []); });
       tdBtn.appendChild(btn);
       tr.addEventListener('click', function(){ showSaleDetail(s, itemsBySale[s.ID] || []); });
       body.appendChild(tr);
@@ -851,9 +867,14 @@ function renderTodaySales(){
   });
 }
 
-function confirmVoid(saleId){
+function confirmVoid(saleId, branchId, items){
   if (!window.confirm('ຍົກເລີກລາຍການຂາຍນີ້ (ສະຕັອກຈະຄືນ)?')) return;
-  run('voidSale', [saleId], function(){ toast('✅ ຍົກເລີກແລ້ວ'); reloadAll(function(){ renderTodaySales(); }); });
+  run('voidSale', [saleId], function(){
+    toast('✅ ຍົກເລີກແລ້ວ');
+    items.forEach(function(it){ adjustLocalStock(branchId, it.ProductID, Number(it.Qty) || 0); });
+    renderPOS();
+    renderTodaySales();
+  });
 }
 
 function showSaleDetail(sale, items){
@@ -1194,11 +1215,21 @@ function renderExpenses(){
 }
 
 /* ---------- summary tab ---------- */
+var LAO_MONTH_NAMES = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
+function fmtDateLao(dstr){
+  var p = dstr.split('-');
+  if (p.length !== 3) return dstr;
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+
 function renderSummary(){
   $('sumBranchChip').textContent = branchName(STATE.currentBranch);
-  if (!$('sumMonth').value) $('sumMonth').value = monthStr();
-  var parts = $('sumMonth').value.split('-');
+  if (!$('sumDate').value) $('sumDate').value = todayStr();
+  var dayKey = $('sumDate').value;
+  var parts = dayKey.split('-');
   var year = Number(parts[0]), month = Number(parts[1]);
+  $('sumDayLabel').textContent = '📅 ສະຫຼຸບວັນທີ ' + fmtDateLao(dayKey);
+  $('sumMonthLabel').textContent = '📊 ປະຫວັດແຕ່ລະມື້ — ເດືອນ ' + (LAO_MONTH_NAMES[month - 1] || month) + ' ' + year + ' (ກົດເລືອກວັນທີອື່ນຢູ່ເທິງເພື່ອເບິ່ງສະຫຼຸບມື້ນັ້ນ)';
   run('getMonthData', [year, month], function(data){
     var sales = data.sales.filter(function(s){ return s.BranchID === STATE.currentBranch; });
     var expenses = data.expenses.filter(function(e){ return e.BranchID === STATE.currentBranch; });
@@ -1210,21 +1241,26 @@ function renderSummary(){
     incomes.forEach(function(e){ var m = day(e.Date); m[e.PaymentType] += Number(e.Amount) || 0; });
     expenses.forEach(function(e){ var m = day(e.Date); m.exp += Number(e.Amount) || 0; });
 
+    /* ---- ຂໍ້ມູນສະເພາະວັນທີທີ່ເລືອກ (ສຳລັບກາດ + ຕາຕະລາງແຍກໝວດ) ---- */
+    var daySales = sales.filter(function(s){ return s.Date === dayKey; });
+    var dayExpenses = expenses.filter(function(e){ return e.Date === dayKey; });
+    var dayIncomes = incomes.filter(function(e){ return e.Date === dayKey; });
+
     var catById = {};
     STATE.products.forEach(function(p){ catById[p.ID] = p.Category || 'ອື່ນໆ'; });
-    var saleIds = {};
-    sales.forEach(function(s){ saleIds[s.ID] = true; });
+    var daySaleIds = {};
+    daySales.forEach(function(s){ daySaleIds[s.ID] = true; });
     var incomeCat = {};
-    data.items.filter(function(it){ return saleIds[it.SaleID]; }).forEach(function(it){
+    data.items.filter(function(it){ return daySaleIds[it.SaleID]; }).forEach(function(it){
       var cat = catById[it.ProductID] || 'ອື່ນໆ';
       incomeCat[cat] = (incomeCat[cat] || 0) + (Number(it.LineTotal) || 0);
     });
-    incomes.forEach(function(e){
+    dayIncomes.forEach(function(e){
       var cat = e.Category || 'ອື່ນໆ';
       incomeCat[cat] = (incomeCat[cat] || 0) + (Number(e.Amount) || 0);
     });
     var expenseCat = {};
-    expenses.forEach(function(e){
+    dayExpenses.forEach(function(e){
       var cat = e.Category || 'ອື່ນໆ';
       expenseCat[cat] = (expenseCat[cat] || 0) + (Number(e.Amount) || 0);
     });
@@ -1245,23 +1281,23 @@ function renderSummary(){
     var keys = Object.keys(map).sort();
     var body = $('sumBody');
     body.innerHTML = '';
-    var tCash = 0, tTransfer = 0, tExp = 0;
     keys.slice().reverse().forEach(function(k){
       var m = map[k];
       var net = m.cash + m.transfer - m.exp;
-      tCash += m.cash; tTransfer += m.transfer; tExp += m.exp;
       var tr = document.createElement('tr');
+      if (k === dayKey) tr.className = 'sel';
       tr.innerHTML = '<td>' + k + '</td><td class="num">' + fmt(m.cash) + '</td><td class="num">' + fmt(m.transfer) + '</td><td class="num">' + fmt(m.exp) + '</td><td class="num" style="color:' + (net < 0 ? 'var(--out)' : 'var(--in)') + '">' + fmt(net) + '</td>';
       body.appendChild(tr);
     });
     $('sumEmpty').style.display = keys.length ? 'none' : 'block';
 
-    var netAll = tCash + tTransfer - tExp;
+    var dm = map[dayKey] || { cash: 0, transfer: 0, exp: 0 };
+    var netDay = dm.cash + dm.transfer - dm.exp;
     $('sumCards').innerHTML =
-      '<div class="scard"><div class="label">💵 ຂາຍເງິນສົດ</div><div class="val">' + fmt(tCash) + '</div></div>' +
-      '<div class="scard"><div class="label">🏦 ຂາຍເງິນໂອນ</div><div class="val">' + fmt(tTransfer) + '</div></div>' +
-      '<div class="scard"><div class="label">➖ ລາຍຈ່າຍ</div><div class="val">' + fmt(tExp) + '</div></div>' +
-      '<div class="scard ' + (netAll < 0 ? 'neg' : 'net') + '"><div class="label">ກຳໄລສຸດທິ</div><div class="val">' + fmt(netAll) + '</div></div>';
+      '<div class="scard"><div class="label">💵 ຂາຍເງິນສົດ</div><div class="val">' + fmt(dm.cash) + '</div></div>' +
+      '<div class="scard"><div class="label">🏦 ຂາຍເງິນໂອນ</div><div class="val">' + fmt(dm.transfer) + '</div></div>' +
+      '<div class="scard"><div class="label">➖ ລາຍຈ່າຍ</div><div class="val">' + fmt(dm.exp) + '</div></div>' +
+      '<div class="scard ' + (netDay < 0 ? 'neg' : 'net') + '"><div class="label">ກຳໄລສຸດທິ</div><div class="val">' + fmt(netDay) + '</div></div>';
 
     renderSummaryChart(keys, map);
   });
