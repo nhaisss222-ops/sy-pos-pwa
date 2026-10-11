@@ -481,7 +481,7 @@ function shopProductCategories(){ return STATE.productCategories.filter(function
 function $(id){ return document.getElementById(id); }
 
 function parseAmount(v){
-  var raw = String(v || '').trim();
+  var raw = String(v || '').trim().replace(/,/g, '');
   if (!raw) return 0;
   var last = raw.charAt(raw.length - 1).toLowerCase();
   var mult = 1, numPart = raw;
