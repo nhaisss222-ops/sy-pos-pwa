@@ -257,6 +257,19 @@ details.inline .sec-body{padding:2px 12px 12px}
 </label>
 <div class="hint" style="margin:6px 0 0">ພິມສັ້ນໄດ້: <b>5k</b> = 5,000 · <b>1.2m</b> = 1,200,000</div>
 
+<label class="fld" style="display:flex;align-items:center;gap:8px;margin-top:14px;cursor:pointer">
+<input type="checkbox" id="pAddStock" style="width:18px;height:18px;margin:0">
+<span>📦 ເພີ່ມສະຕັອກເລີ່ມຕົ້ນ (ບໍ່ຈຳເປັນ — ເລືອກໃສ່ສະຕັອກ ຫຼື ບໍ່ໃສ່ກໍໄດ້)</span>
+</label>
+<div class="grid2" id="pStockFields" style="display:none;margin-top:8px">
+<label class="fld">ຈຳນວນສະຕັອກ
+<input type="text" id="pStockQty" inputmode="decimal" placeholder="0">
+</label>
+<label class="fld">ວັນທີເພີ່ມສະຕັອກ
+<input type="date" id="pStockDate">
+</label>
+</div>
+
 <details class="inline" style="margin-top:12px" id="prodMoreSec">
 <summary>➕ ລາຍລະອຽດເພີ່ມເຕີມ (ຮູບ, ໝວດ, ຫົວໜ່ວຍ, ສະຕັອກຕໍ່າສຸດ) — ບໍ່ຈຳເປັນ</summary>
 <div class="sec-body">
@@ -796,6 +809,7 @@ function onBoot(data){
   refreshHeldBills();
   $('eDate').value = todayStr();
   $('iDate').value = todayStr();
+  $('pStockDate').value = todayStr();
   if (!$('sumDate').value) $('sumDate').value = todayStr();
   $('expBranchLabel').textContent = branchName(STATE.currentBranch);
   $('incBranchLabel').textContent = branchName(STATE.currentBranch);
@@ -1319,6 +1333,10 @@ function startEditProduct(p){
   if (p.Image) { $('pImagePreview').src = p.Image; $('pImagePreviewWrap').style.display = 'flex'; }
   else { $('pImagePreviewWrap').style.display = 'none'; }
   if (p.Category || p.Unit || p.MinStock || p.Image) { $('prodMoreSec').open = true; }
+  $('pAddStock').checked = false;
+  $('pStockFields').style.display = 'none';
+  $('pStockQty').value = '';
+  $('pStockDate').value = todayStr();
   $('prodFormTitle').textContent = '✏️ ແກ້ໄຂສິນຄ້າ: ' + p.Name;
   $('prodCancelBtn').style.display = 'inline-block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1333,9 +1351,18 @@ function resetProductForm(){
   $('pImageData').value = '';
   $('pImagePreviewWrap').style.display = 'none';
   $('prodMoreSec').open = false;
+  $('pAddStock').checked = false;
+  $('pStockFields').style.display = 'none';
+  $('pStockQty').value = '';
+  $('pStockDate').value = todayStr();
   $('prodFormTitle').textContent = '➕ ເພີ່ມສິນຄ້າໃໝ່';
   $('prodCancelBtn').style.display = 'none';
 }
+
+$('pAddStock').addEventListener('change', function(){
+  $('pStockFields').style.display = this.checked ? 'grid' : 'none';
+  if (this.checked && !$('pStockDate').value) { $('pStockDate').value = todayStr(); }
+});
 
 $('prodForm').addEventListener('submit', function(ev){
   ev.preventDefault();
@@ -1351,7 +1378,21 @@ $('prodForm').addEventListener('submit', function(ev){
     image: $('pImageData').value || ''
   };
   if (!p.name) { toast('❌ ກະລຸນາປ້ອນຊື່ສິນຄ້າ'); return; }
-  run('saveProduct', [p], function(){ toast('✅ ບັນທຶກສິນຄ້າແລ້ວ'); resetProductForm(); reloadAll(); });
+  var addStock = $('pAddStock').checked;
+  var stockQty = parseAmount($('pStockQty').value);
+  var stockDate = $('pStockDate').value || todayStr();
+  if (addStock && stockQty > 0 && !STATE.currentBranch) {
+    toast('❌ ກະລຸນາເລືອກສາຂາກ່ອນ ເພື່ອເພີ່ມສະຕັອກ'); return;
+  }
+  run('saveProduct', [p], function(res){
+    var pid = p.id || (res && res.id);
+    function done(){ toast('✅ ບັນທຶກສິນຄ້າແລ້ວ'); resetProductForm(); reloadAll(); }
+    if (addStock && stockQty > 0 && STATE.currentBranch && pid) {
+      run('addStockIn', [{ date: stockDate, branchId: STATE.currentBranch, productId: pid, productName: p.name, qty: stockQty, note: 'ສະຕັອກເລີ່ມຕົ້ນ' }], done);
+    } else {
+      done();
+    }
+  });
 });
 
 /* ---------- shops tab ---------- */
