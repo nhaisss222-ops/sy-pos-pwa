@@ -377,6 +377,21 @@ details.inline .sec-body{padding:2px 12px 12px}
 </label>
 <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:8px" id="sumDayLabel"></div>
 <div class="cards" id="sumCards"></div>
+<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:14px">
+<div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:10px">📒 ປິດບັນຊີປະຈຳວັນ</div>
+<div class="grid2">
+<label class="fld">ຮັບເງິນສົດ (ນັບຕົວຈິງ)
+<input type="text" id="closeCash" inputmode="decimal" placeholder="0">
+</label>
+<label class="fld">ຮັບເງິນໂອນ (ຕົວຈິງ)
+<input type="text" id="closeTransfer" inputmode="decimal" placeholder="0">
+</label>
+</div>
+<div class="hint" id="closeStatus" style="margin:10px 0 0"></div>
+<div class="row" style="margin-top:10px">
+<button class="btn" id="closeDayBtn" style="flex:1">📒 ລົງບັນຊີ</button>
+</div>
+</div>
 <div class="grid2" style="margin-top:10px">
 <div>
 <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">💰 ລາຍຮັບຕາມໝວດ</div>
@@ -696,6 +711,21 @@ function renderCatChips(){
 /* ---------- POS: product grid ---------- */
 $('posSearch').addEventListener('input', renderPOS);
 $('sumDate').addEventListener('change', renderSummary);
+
+$('closeDayBtn').addEventListener('click', function(){
+  if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
+  var dateStr = $('sumDate').value || todayStr();
+  var payload = {
+    branchId: STATE.currentBranch,
+    date: dateStr,
+    cash: parseAmount($('closeCash').value),
+    transfer: parseAmount($('closeTransfer').value)
+  };
+  run('closeDay', [payload], function(){
+    toast('✅ ລົງບັນຊີແລ້ວ');
+    renderSummary();
+  });
+});
 
 function renderPOS(){
   var q = ($('posSearch').value || '').toLowerCase();
@@ -1234,6 +1264,9 @@ function renderSummary(){
     var sales = data.sales.filter(function(s){ return s.BranchID === STATE.currentBranch; });
     var expenses = data.expenses.filter(function(e){ return e.BranchID === STATE.currentBranch; });
     var incomes = (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch; });
+    var closings = (data.closings || []).filter(function(c){ return c.BranchID === STATE.currentBranch; });
+    var closingByDate = {};
+    closings.forEach(function(c){ closingByDate[c.Date] = c; });
 
     var map = {};
     function day(d){ if (!map[d]) map[d] = { cash: 0, transfer: 0, exp: 0 }; return map[d]; }
@@ -1286,7 +1319,8 @@ function renderSummary(){
       var net = m.cash + m.transfer - m.exp;
       var tr = document.createElement('tr');
       if (k === dayKey) tr.className = 'sel';
-      tr.innerHTML = '<td>' + k + '</td><td class="num">' + fmt(m.cash) + '</td><td class="num">' + fmt(m.transfer) + '</td><td class="num">' + fmt(m.exp) + '</td><td class="num" style="color:' + (net < 0 ? 'var(--out)' : 'var(--in)') + '">' + fmt(net) + '</td>';
+      var closedMark = closingByDate[k] ? ' ✅' : '';
+      tr.innerHTML = '<td>' + k + closedMark + '</td><td class="num">' + fmt(m.cash) + '</td><td class="num">' + fmt(m.transfer) + '</td><td class="num">' + fmt(m.exp) + '</td><td class="num" style="color:' + (net < 0 ? 'var(--out)' : 'var(--in)') + '">' + fmt(net) + '</td>';
       body.appendChild(tr);
     });
     $('sumEmpty').style.display = keys.length ? 'none' : 'block';
@@ -1298,6 +1332,17 @@ function renderSummary(){
       '<div class="scard"><div class="label">🏦 ຂາຍເງິນໂອນ</div><div class="val">' + fmt(dm.transfer) + '</div></div>' +
       '<div class="scard"><div class="label">➖ ລາຍຈ່າຍ</div><div class="val">' + fmt(dm.exp) + '</div></div>' +
       '<div class="scard ' + (netDay < 0 ? 'neg' : 'net') + '"><div class="label">ກຳໄລສຸດທິ</div><div class="val">' + fmt(netDay) + '</div></div>';
+
+    var dayClosing = closingByDate[dayKey];
+    if (dayClosing) {
+      $('closeCash').value = fmt(dayClosing.Cash);
+      $('closeTransfer').value = fmt(dayClosing.Transfer);
+      $('closeStatus').innerHTML = '✅ ປິດບັນຊີແລ້ວ ເວລາ ' + (dayClosing.ClosedTime || '') + ' — ກົດ "ລົງບັນຊີ" ອີກຄັ້ງຖ້າຕ້ອງການແກ້ໄຂ';
+    } else {
+      $('closeCash').value = fmt(dm.cash);
+      $('closeTransfer').value = fmt(dm.transfer);
+      $('closeStatus').textContent = 'ຍັງບໍ່ໄດ້ປິດບັນຊີມື້ນີ້';
+    }
 
     renderSummaryChart(keys, map);
   });
