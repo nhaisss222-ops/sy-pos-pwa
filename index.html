@@ -113,6 +113,10 @@ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 .cart-line{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
 .cart-line .nm{flex:1;font-size:13.5px}
 .cart-line .pr{font-size:12px;color:var(--muted)}
+.held-line{display:flex;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid var(--line)}
+.held-line .nm{flex:1;font-size:13.5px;font-weight:600}
+.held-line .meta{font-size:12px;color:var(--muted);margin-top:2px;font-weight:400}
+.held-line .tot{font-size:14px;font-weight:700;color:var(--accent);white-space:nowrap}
 .qtybox{display:flex;align-items:center;gap:6px}
 .qtybox button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:16px;cursor:pointer;line-height:1}
 .qtybox span{min-width:22px;text-align:center;font-weight:600;font-size:13.5px}
@@ -204,7 +208,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 <!-- ===== POS ===== -->
 <section class="view on" id="view-pos">
 <div class="card">
-<h2>🛒 ເລືອກສິນຄ້າ</h2>
+<h2>🛒 ເລືອກສິນຄ້າ <span class="chip" id="heldBillsChip">🧾 ບິນລໍຖ້າ 0</span></h2>
 <div class="pos-top">
 <input type="text" id="posSearch" placeholder="🔍 ຄົ້ນຫາສິນຄ້າ...">
 </div>
@@ -518,9 +522,25 @@ details.inline .sec-body{padding:2px 12px 12px}
 <label class="fld">ໝາຍເຫດ (ບໍ່ຈຳເປັນ)
 <input type="text" id="saleNote">
 </label>
+<label class="fld">ຊື່ລູກຄ້າ / ຊື່ບິນ (ສຳລັບບັນທຶກລໍຖ້າ)
+<input type="text" id="holdCustomerName" placeholder="ເຊັ່ນ: ບິນລຸງແດງ">
+</label>
 <div class="row" style="margin-top:12px">
 <button class="btn ghost" id="closeCartBtn">ປິດ</button>
+<button class="btn ghost" id="holdBillBtn" style="flex:1">📝 ບັນທຶກລໍຖ້າ</button>
 <button class="btn" id="checkoutBtn" style="flex:1">✅ ຢືນຢັນການຂາຍ</button>
+</div>
+</div>
+</div>
+
+<!-- ===== HELD BILLS MODAL ===== -->
+<div class="modal" id="heldBillsModal">
+<div class="box">
+<h3>🧾 ບິນລໍຖ້າ</h3>
+<div id="heldBillsList"></div>
+<div class="empty" id="heldBillsEmpty" style="display:none">ບໍ່ມີບິນລໍຖ້າ</div>
+<div class="row" style="margin-top:12px">
+<button class="btn ghost" id="closeHeldBillsBtn" style="flex:1">ປິດ</button>
 </div>
 </div>
 </div>
@@ -573,7 +593,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 (function(){
 "use strict";
 
-var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null } };
+var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null }, heldBills: [], resumingHeldBillId: null };
 
 function shopBranches(){ return STATE.branches.filter(function(b){ return b.ShopID === STATE.currentShop; }); }
 function shopProducts(){ return STATE.products.filter(function(p){ return p.ShopID === STATE.currentShop; }); }
@@ -707,6 +727,7 @@ $('shopSel').addEventListener('change', function(){
   renderBranches();
   renderShops();
   renderTodaySales();
+  renderHeldChip();
   $('expBranchLabel').textContent = branchName(STATE.currentBranch);
   $('incBranchLabel').textContent = branchName(STATE.currentBranch);
 });
@@ -738,6 +759,7 @@ $('branchSel').addEventListener('change', function(){
   renderPOS();
   renderProducts();
   renderTodaySales();
+  renderHeldChip();
 });
 
 /* ---------- boot ---------- */
@@ -771,6 +793,7 @@ function onBoot(data){
   renderBranches();
   renderShops();
   renderTodaySales();
+  refreshHeldBills();
   $('eDate').value = todayStr();
   $('iDate').value = todayStr();
   if (!$('sumDate').value) $('sumDate').value = todayStr();
@@ -989,6 +1012,81 @@ function renderCart(){
 $('openCartBtn').addEventListener('click', function(){ $('cartModal').classList.add('show'); });
 $('closeCartBtn').addEventListener('click', function(){ $('cartModal').classList.remove('show'); });
 
+/* ---------- ບິນລໍຖ້າ (hold / park bill) ---------- */
+function refreshHeldBills(after){
+  run('getHeldBills', [], function(list){
+    STATE.heldBills = list || [];
+    renderHeldChip();
+    if (after) after();
+  });
+}
+
+function renderHeldChip(){
+  var n = STATE.heldBills.filter(function(h){ return h.BranchID === STATE.currentBranch; }).length;
+  $('heldBillsChip').textContent = '🧾 ບິນລໍຖ້າ ' + n;
+}
+
+$('heldBillsChip').addEventListener('click', function(){
+  refreshHeldBills(function(){
+    renderHeldBillsModal();
+    $('heldBillsModal').classList.add('show');
+  });
+});
+$('closeHeldBillsBtn').addEventListener('click', function(){ $('heldBillsModal').classList.remove('show'); });
+
+function renderHeldBillsModal(){
+  var list = STATE.heldBills.filter(function(h){ return h.BranchID === STATE.currentBranch; });
+  list.sort(function(a, b){ return a.DateTime < b.DateTime ? 1 : -1; });
+  var box = $('heldBillsList');
+  box.innerHTML = '';
+  $('heldBillsEmpty').style.display = list.length ? 'none' : 'block';
+  list.forEach(function(h){
+    var itemCount = (h.Items || []).reduce(function(s, it){ return s + (Number(it.qty) || 0); }, 0);
+    var row = document.createElement('div');
+    row.className = 'held-line';
+    row.innerHTML = '<div class="nm">' + escapeHtml(h.CustomerName || 'ບໍ່ລະບຸຊື່') +
+      '<div class="meta">' + itemCount + ' ລາຍການ · ' + (h.Time || '') + (h.Note ? (' · ' + escapeHtml(h.Note)) : '') + '</div></div>' +
+      '<div class="tot">' + fmt(h.Total) + ' ກີບ</div>' +
+      '<button type="button" class="btn sm" data-a="resume">▶️ ດຶງມາຂາຍ</button>' +
+      '<button type="button" class="icon-btn" data-a="del">🗑️</button>';
+    row.querySelector('[data-a="resume"]').addEventListener('click', function(){ resumeHeldBill(h); });
+    row.querySelector('[data-a="del"]').addEventListener('click', function(){
+      run('deleteHeldBill', [h.ID], function(){ toast('✅ ລົບບິນລໍຖ້າແລ້ວ'); refreshHeldBills(function(){ renderHeldBillsModal(); }); });
+    });
+    box.appendChild(row);
+  });
+}
+
+function resumeHeldBill(h){
+  if (STATE.cart.length && !window.confirm('ກະຕ່າປັດຈຸບັນຍັງມີລາຍການຢູ່ — ດຶງບິນນີ້ມາຈະທັບກະຕ່າເກົ່າ. ແທ້ບໍ?')) return;
+  STATE.cart = (h.Items || []).map(function(it){
+    return { productId: it.productId, name: it.name, price: Number(it.price) || 0, qty: Number(it.qty) || 0, unit: it.unit || '' };
+  });
+  STATE.resumingHeldBillId = h.ID;
+  $('holdCustomerName').value = h.CustomerName || '';
+  $('saleNote').value = h.Note || '';
+  renderCart();
+  $('heldBillsModal').classList.remove('show');
+  $('cartModal').classList.add('show');
+}
+
+$('holdBillBtn').addEventListener('click', function(){
+  if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
+  if (!STATE.cart.length) { toast('❌ ກະຕ່າວ່າງເປົ່າ'); return; }
+  var items = STATE.cart.map(function(l){ return { productId: l.productId, name: l.name, qty: l.qty, price: l.price, unit: l.unit || '' }; });
+  var payload = { branchId: STATE.currentBranch, customerName: $('holdCustomerName').value || '', items: items, note: $('saleNote').value || '' };
+  run('holdBill', [payload], function(res){
+    toast('✅ ບັນທຶກບິນລໍຖ້າແລ້ວ ' + fmt(res.total) + ' ກີບ');
+    STATE.cart = [];
+    STATE.resumingHeldBillId = null;
+    $('holdCustomerName').value = '';
+    $('saleNote').value = '';
+    $('cartModal').classList.remove('show');
+    renderCart();
+    refreshHeldBills();
+  });
+});
+
 var payType = 'cash';
 $('payCash').addEventListener('click', function(){ payType = 'cash'; $('payCash').classList.add('on'); $('payTransfer').classList.remove('on'); });
 $('payTransfer').addEventListener('click', function(){ payType = 'transfer'; $('payTransfer').classList.add('on'); $('payCash').classList.remove('on'); });
@@ -1003,10 +1101,16 @@ $('checkoutBtn').addEventListener('click', function(){
     items.forEach(function(it){ adjustLocalStock(STATE.currentBranch, it.productId, -it.qty); });
     STATE.cart = [];
     $('saleNote').value = '';
+    $('holdCustomerName').value = '';
     $('cartModal').classList.remove('show');
     renderCart();
     renderPOS();
     renderTodaySales();
+    if (STATE.resumingHeldBillId) {
+      var heldId = STATE.resumingHeldBillId;
+      STATE.resumingHeldBillId = null;
+      run('deleteHeldBill', [heldId], function(){ refreshHeldBills(); });
+    }
   });
 });
 
