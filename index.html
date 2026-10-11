@@ -106,6 +106,10 @@ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 .modal .box{background:#fff;border-radius:18px 18px 0 0;padding:18px 16px 22px;max-width:520px;width:100%;box-shadow:0 -10px 40px rgba(0,0,0,.25);max-height:86vh;overflow:auto}
 @media (min-width:600px){.modal{align-items:center}.modal .box{border-radius:var(--radius);max-height:90vh}}
 .modal h3{margin:0 0 10px;font-size:16px}
+.period-opt{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px}
+.period-opt:last-of-type{border-bottom:none}
+.period-opt input[type=radio]{width:19px;height:19px;accent-color:var(--accent);margin:0}
+.period-opt span{flex:1}
 .cart-line{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
 .cart-line .nm{flex:1;font-size:13.5px}
 .cart-line .pr{font-size:12px;color:var(--muted)}
@@ -436,8 +440,12 @@ details.inline .sec-body{padding:2px 12px 12px}
 <button type="button" class="btn ghost" id="sumDateNext" style="flex:0 0 auto;padding:8px 14px">▶</button>
 </div>
 </label>
-<div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:8px" id="sumDayLabel"></div>
+<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+<div style="font-size:13.5px;font-weight:700;color:var(--ink)" id="sumPeriodLabel"></div>
+<button type="button" class="btn ghost" id="sumPeriodBtn" style="padding:8px 14px;flex:0 0 auto">🗓️ ເລືອກໄລຍະເວລາ</button>
+</div>
 <div class="cards" id="sumCards"></div>
+<div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:8px" id="sumDayLabel"></div>
 <div style="border-top:1px solid var(--line);margin-top:12px;padding-top:14px">
 <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:10px">📒 ປິດບັນຊີປະຈຳວັນ</div>
 <div class="grid2">
@@ -471,7 +479,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px" id="sumMonthLabel"></div>
 <div class="tbl-scroll">
 <table>
-<thead><tr><th>ວັນທີ</th><th style="text-align:right">ຂາຍເງິນສົດ</th><th style="text-align:right">ຂາຍເງິນໂອນ</th><th style="text-align:right">ລາຍຈ່າຍ</th><th style="text-align:right">ກຳໄລສຸດທິ</th></tr></thead>
+<thead><tr><th>ວັນທີ</th><th>ສະຖານະ</th><th style="text-align:right">ຂາຍເງິນສົດ</th><th style="text-align:right">ຂາຍເງິນໂອນ</th><th style="text-align:right">ລາຍຈ່າຍ</th><th style="text-align:right">ກຳໄລສຸດທິ</th></tr></thead>
 <tbody id="sumBody"></tbody>
 </table>
 </div>
@@ -533,13 +541,39 @@ details.inline .sec-body{padding:2px 12px 12px}
 </div>
 </div>
 
+<!-- ===== PERIOD SELECT MODAL ===== -->
+<div class="modal" id="periodModal">
+<div class="box">
+<h3>ເລືອກໄລຍະເວລາ</h3>
+<label class="period-opt"><input type="radio" name="periodOpt" value="today"><span>ມື້ນີ້</span></label>
+<label class="period-opt"><input type="radio" name="periodOpt" value="week"><span>ອາທິດນີ້</span></label>
+<label class="period-opt"><input type="radio" name="periodOpt" value="month"><span>ເດືອນນີ້</span></label>
+<label class="period-opt"><input type="radio" name="periodOpt" value="year"><span>ປີນີ້</span></label>
+<label class="period-opt"><input type="radio" name="periodOpt" value="custom"><span>ກຳນົດເອງ</span></label>
+<div id="customPeriodFields" style="display:none;margin-top:4px">
+<div class="grid2">
+<label class="fld">ຈາກວັນທີ
+<input type="date" id="periodFrom">
+</label>
+<label class="fld">ຫາວັນທີ
+<input type="date" id="periodTo">
+</label>
+</div>
+</div>
+<div class="row" style="margin-top:16px">
+<button class="btn ghost" id="periodCancelBtn" style="flex:1">ຍົກເລີກ</button>
+<button class="btn" id="periodApplyBtn" style="flex:1">ນຳໃຊ້</button>
+</div>
+</div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 (function(){
 "use strict";
 
-var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null };
+var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null } };
 
 function shopBranches(){ return STATE.branches.filter(function(b){ return b.ShopID === STATE.currentShop; }); }
 function shopProducts(){ return STATE.products.filter(function(p){ return p.ShopID === STATE.currentShop; }); }
@@ -805,12 +839,9 @@ $('posSearch').addEventListener('input', renderPOS);
 $('sumDate').addEventListener('change', renderSummary);
 
 function shiftDateStr(dateStr, days){
-  var parts = (dateStr || todayStr()).split('-');
-  var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  var d = parseDateStr(dateStr);
   d.setDate(d.getDate() + days);
-  var mm = String(d.getMonth() + 1); if (mm.length < 2) mm = '0' + mm;
-  var dd = String(d.getDate()); if (dd.length < 2) dd = '0' + dd;
-  return d.getFullYear() + '-' + mm + '-' + dd;
+  return fmtDateStr(d);
 }
 $('sumDatePrev').addEventListener('click', function(){
   $('sumDate').value = shiftDateStr($('sumDate').value, -1);
@@ -1424,8 +1455,110 @@ function fmtDateLao(dstr){
   return p[2] + '/' + p[1] + '/' + p[0];
 }
 
+/* ---------- ໄລຍະເວລາສະຫຼຸບ (ມື້ນີ້ / ອາທິດນີ້ / ເດືອນນີ້ / ປີນີ້ / ກຳນົດເອງ) ---------- */
+function parseDateStr(s){
+  var p = (s || todayStr()).split('-');
+  return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+}
+function fmtDateStr(d){
+  var mm = String(d.getMonth() + 1); if (mm.length < 2) mm = '0' + mm;
+  var dd = String(d.getDate()); if (dd.length < 2) dd = '0' + dd;
+  return d.getFullYear() + '-' + mm + '-' + dd;
+}
+function daysBetweenStr(fromStr, toStr){
+  return Math.round((parseDateStr(toStr) - parseDateStr(fromStr)) / 86400000);
+}
+function periodRange(type){
+  var today = todayStr();
+  if (type === 'week') {
+    var d = parseDateStr(today);
+    var dow = d.getDay();
+    var diffToMon = (dow === 0) ? 6 : dow - 1;
+    var mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - diffToMon);
+    return { from: fmtDateStr(mon), to: today };
+  }
+  if (type === 'month') {
+    var p = today.split('-');
+    return { from: p[0] + '-' + p[1] + '-01', to: today };
+  }
+  if (type === 'year') {
+    var p2 = today.split('-');
+    return { from: p2[0] + '-01-01', to: today };
+  }
+  return { from: today, to: today }; /* today / fallback */
+}
+function periodTypeLabel(type){
+  return { today: 'ມື້ນີ້', week: 'ອາທິດນີ້', month: 'ເດືອນນີ້', year: 'ປີນີ້', custom: 'ກຳນົດເອງ' }[type] || type;
+}
+
+function renderPeriodCards(){
+  if (!STATE.sumPeriod || !STATE.sumPeriod.from) {
+    var r0 = periodRange('today');
+    STATE.sumPeriod = { type: 'today', from: r0.from, to: r0.to };
+  }
+  var period = STATE.sumPeriod;
+  var rangeLabel = (period.from === period.to) ? fmtDateLao(period.from) : (fmtDateLao(period.from) + ' - ' + fmtDateLao(period.to));
+  $('sumPeriodLabel').textContent = '📊 ' + periodTypeLabel(period.type) + ' (' + rangeLabel + ')';
+  var days = Math.max(2, daysBetweenStr(period.from, todayStr()) + 2);
+  run('getRecentData', [days], function(data){
+    var inRange = function(dstr){ return dstr >= period.from && dstr <= period.to; };
+    var sales = (data.sales || []).filter(function(s){ return s.BranchID === STATE.currentBranch && inRange(s.Date); });
+    var expenses = (data.expenses || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
+    var incomes = (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
+    var cash = 0, transfer = 0, exp = 0;
+    sales.forEach(function(s){
+      if (s.PaymentType === 'cash') cash += Number(s.Total) || 0;
+      else if (s.PaymentType === 'transfer') transfer += Number(s.Total) || 0;
+    });
+    incomes.forEach(function(e){
+      if (e.PaymentType === 'cash') cash += Number(e.Amount) || 0;
+      else if (e.PaymentType === 'transfer') transfer += Number(e.Amount) || 0;
+    });
+    expenses.forEach(function(e){ exp += Number(e.Amount) || 0; });
+    var net = cash + transfer - exp;
+    $('sumCards').innerHTML =
+      '<div class="scard"><div class="label">💵 ຂາຍເງິນສົດ</div><div class="val">' + fmt(cash) + '</div></div>' +
+      '<div class="scard"><div class="label">🏦 ຂາຍເງິນໂອນ</div><div class="val">' + fmt(transfer) + '</div></div>' +
+      '<div class="scard"><div class="label">➖ ລາຍຈ່າຍ</div><div class="val">' + fmt(exp) + '</div></div>' +
+      '<div class="scard ' + (net < 0 ? 'neg' : 'net') + '"><div class="label">ກຳໄລສຸດທິ</div><div class="val">' + fmt(net) + '</div></div>';
+  });
+}
+
+function openPeriodModal(){
+  var radios = document.querySelectorAll('input[name="periodOpt"]');
+  radios.forEach(function(r){ r.checked = (r.value === STATE.sumPeriod.type); });
+  $('periodFrom').value = STATE.sumPeriod.from || todayStr();
+  $('periodTo').value = STATE.sumPeriod.to || todayStr();
+  $('customPeriodFields').style.display = (STATE.sumPeriod.type === 'custom') ? 'block' : 'none';
+  $('periodModal').classList.add('show');
+}
+$('sumPeriodBtn').addEventListener('click', openPeriodModal);
+$('periodCancelBtn').addEventListener('click', function(){ $('periodModal').classList.remove('show'); });
+document.querySelectorAll('input[name="periodOpt"]').forEach(function(r){
+  r.addEventListener('change', function(){
+    $('customPeriodFields').style.display = (this.value === 'custom' && this.checked) ? 'block' : 'none';
+  });
+});
+$('periodApplyBtn').addEventListener('click', function(){
+  var sel = document.querySelector('input[name="periodOpt"]:checked');
+  var type = sel ? sel.value : 'today';
+  var range;
+  if (type === 'custom') {
+    var from = $('periodFrom').value, to = $('periodTo').value;
+    if (!from || !to) { toast('❌ ກະລຸນາເລືອກວັນທີ'); return; }
+    if (from > to) { var tmp = from; from = to; to = tmp; }
+    range = { from: from, to: to };
+  } else {
+    range = periodRange(type);
+  }
+  STATE.sumPeriod = { type: type, from: range.from, to: range.to };
+  $('periodModal').classList.remove('show');
+  renderPeriodCards();
+});
+
 function renderSummary(){
   $('sumBranchChip').textContent = branchName(STATE.currentBranch);
+  renderPeriodCards();
   if (!$('sumDate').value) $('sumDate').value = todayStr();
   var dayKey = $('sumDate').value;
   var parts = dayKey.split('-');
@@ -1498,19 +1631,16 @@ function renderSummary(){
       var net = m.cash + m.transfer - m.exp;
       var tr = document.createElement('tr');
       if (k === dayKey) tr.className = 'sel';
-      var closedMark = closingByDate[k] ? ' ✅' : '';
-      tr.innerHTML = '<td>' + k + closedMark + '</td><td class="num">' + fmt(m.cash) + '</td><td class="num">' + fmt(m.transfer) + '</td><td class="num">' + fmt(m.exp) + '</td><td class="num" style="color:' + (net < 0 ? 'var(--out)' : 'var(--in)') + '">' + fmt(net) + '</td>';
+      var isClosed = !!closingByDate[k];
+      var statusCell = isClosed
+        ? '<td style="color:var(--in);font-weight:600;white-space:nowrap">✅ ລົງບັນຊີແລ້ວ</td>'
+        : '<td style="color:var(--out);font-weight:600;white-space:nowrap">⏳ ຍັງບໍ່ໄດ້ລົງບັນຊີ</td>';
+      tr.innerHTML = '<td>' + k + '</td>' + statusCell + '<td class="num">' + fmt(m.cash) + '</td><td class="num">' + fmt(m.transfer) + '</td><td class="num">' + fmt(m.exp) + '</td><td class="num" style="color:' + (net < 0 ? 'var(--out)' : 'var(--in)') + '">' + fmt(net) + '</td>';
       body.appendChild(tr);
     });
     $('sumEmpty').style.display = keys.length ? 'none' : 'block';
 
     var dm = map[dayKey] || { cash: 0, transfer: 0, exp: 0 };
-    var netDay = dm.cash + dm.transfer - dm.exp;
-    $('sumCards').innerHTML =
-      '<div class="scard"><div class="label">💵 ຂາຍເງິນສົດ</div><div class="val">' + fmt(dm.cash) + '</div></div>' +
-      '<div class="scard"><div class="label">🏦 ຂາຍເງິນໂອນ</div><div class="val">' + fmt(dm.transfer) + '</div></div>' +
-      '<div class="scard"><div class="label">➖ ລາຍຈ່າຍ</div><div class="val">' + fmt(dm.exp) + '</div></div>' +
-      '<div class="scard ' + (netDay < 0 ? 'neg' : 'net') + '"><div class="label">ກຳໄລສຸດທິ</div><div class="val">' + fmt(netDay) + '</div></div>';
 
     var dayClosing = closingByDate[dayKey];
     if (dayClosing) {
