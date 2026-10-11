@@ -161,6 +161,17 @@ tr.foot td{font-weight:700;background:#f8faf9;border-top:2px solid var(--line)}
 .scard.net .val{color:var(--accent)}
 .scard.neg .val{color:var(--out)}
 
+/* dashboard gauges */
+.gauge-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.gauge{background:var(--card);border-radius:var(--radius);padding:10px 4px 12px;box-shadow:var(--shadow);border:1px solid var(--line);text-align:center}
+.gauge svg{display:block;margin:0 auto}
+.gauge .gval{font-size:13.5px;font-weight:700;fill:var(--ink)}
+.gauge .glabel{font-size:11.5px;color:var(--muted);margin-top:6px}
+.gauge .gdelta{font-size:11.5px;font-weight:700;margin-top:2px}
+.gauge .gdelta.up{color:var(--in)}
+.gauge .gdelta.down{color:var(--out)}
+.gauge .gdelta.flat{color:var(--muted)}
+
 .toast{
 position:fixed;left:50%;bottom:86px;transform:translateX(-50%) translateY(20px);
 background:#16211d;color:#fff;padding:11px 18px;border-radius:11px;font-size:14px;opacity:0;
@@ -201,8 +212,9 @@ details.inline .sec-body{padding:2px 12px 12px}
 <div class="tabs" id="tabs">
 <button class="on" data-tab="pos">🛒 ຂາຍເຄື່ອງ</button>
 <button data-tab="products">📦 ສິນຄ້າ</button>
-<button data-tab="expenses">📒 ລົງບັນຊີ</button>
 <button data-tab="summary">📊 ສະຫຼຸບ</button>
+<button data-tab="expenses">📒 ລົງບັນຊີ</button>
+<button data-tab="dashboard">📈 Dashboard</button>
 </div>
 
 <!-- ===== POS ===== -->
@@ -473,6 +485,18 @@ details.inline .sec-body{padding:2px 12px 12px}
 <input type="text" id="closeTransfer" inputmode="decimal" placeholder="0">
 </label>
 </div>
+<div class="hint" style="margin:14px 0 0;font-weight:700;color:var(--ink)">➖ ລາຍຈ່າຍ (ບໍ່ຈຳເປັນ — ມີກໍໄດ້ ບໍ່ມີກໍໄດ້)</div>
+<div class="grid2" style="margin-top:8px">
+<label class="fld">ໝວດລາຍຈ່າຍ
+<select id="closeExpCategory"></select>
+</label>
+<label class="fld">ຈຳນວນເງິນ (ກີບ)
+<input type="text" id="closeExpAmount" inputmode="decimal" placeholder="0">
+</label>
+<label class="fld full">ລາຍການ / ໝາຍເຫດ
+<input type="text" id="closeExpNote" placeholder="ບໍ່ຈຳເປັນ">
+</label>
+</div>
 <div class="hint" id="closeStatus" style="margin:10px 0 0"></div>
 <div class="row" style="margin-top:10px">
 <button class="btn" id="closeDayBtn" style="flex:1">📒 ລົງບັນຊີ</button>
@@ -501,6 +525,28 @@ details.inline .sec-body{padding:2px 12px 12px}
 </table>
 </div>
 <div class="empty" id="sumEmpty">ຍັງບໍ່ມີຂໍ້ມູນ</div>
+</div>
+</section>
+
+<!-- ===== DASHBOARD (ລົງບັນຊີ) ===== -->
+<section class="view" id="view-dashboard">
+<div class="card">
+<h2>📈 Dashboard ລົງບັນຊີ <span class="chip" id="dashBranchChip" style="cursor:default"></span></h2>
+<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+<div style="font-size:13.5px;font-weight:700;color:var(--ink)" id="dashPeriodLabel"></div>
+<button type="button" class="btn ghost" id="dashPeriodBtn" style="padding:8px 14px;flex:0 0 auto">🗓️ ເລືອກໄລຍະເວລາ</button>
+</div>
+<div class="gauge-row" id="dashGauges"></div>
+<div class="scard net" id="dashNetCard" style="margin-bottom:12px"></div>
+<div id="dashChart" style="margin:14px 0"></div>
+<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">🏷️ ແຍກຕາມໝວດ</div>
+<div class="tbl-scroll">
+<table>
+<thead><tr><th>ໝວດ</th><th style="text-align:right">ລາຍຮັບ</th><th style="text-align:right">ລາຍຈ່າຍ</th></tr></thead>
+<tbody id="dashCatBody"></tbody>
+</table>
+</div>
+<div class="empty" id="dashEmpty" style="display:none">ຍັງບໍ່ມີຂໍ້ມູນ</div>
 </div>
 </section>
 
@@ -606,7 +652,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 (function(){
 "use strict";
 
-var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null }, heldBills: [], resumingHeldBillId: null };
+var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null }, dashPeriod: { type: 'today', from: null, to: null }, heldBills: [], resumingHeldBillId: null };
 
 function shopBranches(){ return STATE.branches.filter(function(b){ return b.ShopID === STATE.currentShop; }); }
 function shopProducts(){ return STATE.products.filter(function(p){ return p.ShopID === STATE.currentShop; }); }
@@ -687,6 +733,7 @@ document.querySelectorAll('#tabs button').forEach(function(btn){
     if (btn.getAttribute('data-tab') === 'summary') renderSummary();
     if (btn.getAttribute('data-tab') === 'products') { showProductsSubView('menu'); renderProducts(); }
     if (btn.getAttribute('data-tab') === 'expenses') { $('expBranchLabel').textContent = branchName(STATE.currentBranch); $('incBranchLabel').textContent = branchName(STATE.currentBranch); renderExpenses(); }
+    if (btn.getAttribute('data-tab') === 'dashboard') renderDashboard();
   });
 });
 
@@ -898,9 +945,27 @@ $('closeDayBtn').addEventListener('click', function(){
     cash: parseAmount($('closeCash').value),
     transfer: parseAmount($('closeTransfer').value)
   };
-  run('closeDay', [payload], function(){
+  var expAmount = parseAmount($('closeExpAmount').value);
+  function finishClose(){
     toast('✅ ລົງບັນຊີແລ້ວ');
+    $('closeExpAmount').value = ''; $('closeExpNote').value = '';
     renderSummary();
+    renderExpenses();
+  }
+  run('closeDay', [payload], function(){
+    if (expAmount > 0) {
+      run('addExpense', [{
+        branchId: STATE.currentBranch,
+        date: dateStr,
+        category: $('closeExpCategory').value,
+        item: $('closeExpNote').value.trim(),
+        amount: expAmount,
+        paymentType: 'cash',
+        note: $('closeExpNote').value.trim()
+      }], finishClose);
+    } else {
+      finishClose();
+    }
   });
 });
 
@@ -1460,10 +1525,11 @@ $('addBranchBtn').addEventListener('click', function(){
 
 /* ---------- expenses tab ---------- */
 function renderExpenseCategorySelect(){
-  var sel = $('eCategory');
-  sel.innerHTML = '';
-  STATE.expenseCategories.forEach(function(c){
-    var o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o);
+  [$('eCategory'), $('closeExpCategory')].forEach(function(sel){
+    sel.innerHTML = '';
+    STATE.expenseCategories.forEach(function(c){
+      var o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o);
+    });
   });
 }
 
@@ -1669,15 +1735,20 @@ function renderPeriodCards(){
   });
 }
 
-function openPeriodModal(){
+var periodModalTarget = 'summary';
+function activePeriod(){ return periodModalTarget === 'dashboard' ? STATE.dashPeriod : STATE.sumPeriod; }
+function openPeriodModal(target){
+  periodModalTarget = target || 'summary';
+  var cur = activePeriod();
   var radios = document.querySelectorAll('input[name="periodOpt"]');
-  radios.forEach(function(r){ r.checked = (r.value === STATE.sumPeriod.type); });
-  $('periodFrom').value = STATE.sumPeriod.from || todayStr();
-  $('periodTo').value = STATE.sumPeriod.to || todayStr();
-  $('customPeriodFields').style.display = (STATE.sumPeriod.type === 'custom') ? 'block' : 'none';
+  radios.forEach(function(r){ r.checked = (r.value === cur.type); });
+  $('periodFrom').value = cur.from || todayStr();
+  $('periodTo').value = cur.to || todayStr();
+  $('customPeriodFields').style.display = (cur.type === 'custom') ? 'block' : 'none';
   $('periodModal').classList.add('show');
 }
-$('sumPeriodBtn').addEventListener('click', openPeriodModal);
+$('sumPeriodBtn').addEventListener('click', function(){ openPeriodModal('summary'); });
+$('dashPeriodBtn').addEventListener('click', function(){ openPeriodModal('dashboard'); });
 $('periodCancelBtn').addEventListener('click', function(){ $('periodModal').classList.remove('show'); });
 document.querySelectorAll('input[name="periodOpt"]').forEach(function(r){
   r.addEventListener('change', function(){
@@ -1696,9 +1767,10 @@ $('periodApplyBtn').addEventListener('click', function(){
   } else {
     range = periodRange(type);
   }
-  STATE.sumPeriod = { type: type, from: range.from, to: range.to };
+  var newPeriod = { type: type, from: range.from, to: range.to };
+  if (periodModalTarget === 'dashboard') { STATE.dashPeriod = newPeriod; } else { STATE.sumPeriod = newPeriod; }
   $('periodModal').classList.remove('show');
-  renderPeriodCards();
+  if (periodModalTarget === 'dashboard') { renderDashboard(); } else { renderPeriodCards(); }
 });
 
 function renderSummary(){
@@ -1829,6 +1901,155 @@ function renderSummaryChart(keys, map){
   });
   svg += '</svg>';
   box.innerHTML = '<div class="hint">↔️ ເລື່ອນເບິ່ງໄດ້ · ສີຂຽວ=ກຳໄລ ສີແດງ=ຂາດທຶນ</div><div class="tbl-scroll">' + svg + '</div>';
+}
+
+/* ---------- dashboard tab (ສະຫຼຸບຕາມການລົງບັນຊີ) ---------- */
+function fmtShort(n){
+  n = Number(n) || 0;
+  var neg = n < 0; if (neg) n = -n;
+  var out;
+  if (n >= 1000000) { out = (Math.round(n / 100000) / 10) + 'M'; }
+  else if (n >= 1000) { out = (Math.round(n / 100) / 10) + 'k'; }
+  else { out = String(Math.round(n)); }
+  return (neg ? '-' : '') + out;
+}
+function previousPeriodRange(from, to){
+  var len = daysBetweenStr(from, to) + 1;
+  var prevTo = shiftDateStr(from, -1);
+  var prevFrom = shiftDateStr(prevTo, -(len - 1));
+  return { from: prevFrom, to: prevTo };
+}
+function pctDelta(cur, prev){
+  if (!prev) return null;
+  return ((cur - prev) / Math.abs(prev)) * 100;
+}
+function gaugeSvg(value, ratio, color, label, delta, higherIsBetter){
+  ratio = Math.max(0, Math.min(1, ratio));
+  var r = 34, cx = 40, cy = 40, startA = 135, sweep = 270;
+  var endA = startA + sweep * ratio;
+  function pt(a){ var rad = (a - 90) * Math.PI / 180; return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)]; }
+  function arcPath(a0, a1){
+    if (a1 <= a0) return '';
+    var p0 = pt(a0), p1 = pt(a1);
+    var large = (a1 - a0) > 180 ? 1 : 0;
+    return 'M' + p0[0].toFixed(1) + ',' + p0[1].toFixed(1) + ' A' + r + ',' + r + ' 0 ' + large + ' 1 ' + p1[0].toFixed(1) + ',' + p1[1].toFixed(1);
+  }
+  var track = arcPath(startA, startA + sweep);
+  var fillArc = arcPath(startA, endA);
+  var dot = pt(endA);
+  var deltaHtml = '';
+  if (delta !== null && isFinite(delta)) {
+    var good = higherIsBetter ? (delta >= 0) : (delta <= 0);
+    var cls = Math.abs(delta) < 0.5 ? 'flat' : (good ? 'up' : 'down');
+    var sign = delta > 0 ? '+' : '';
+    deltaHtml = '<div class="gdelta ' + cls + '">' + sign + delta.toFixed(1) + '%</div>';
+  }
+  return '<div class="gauge">' +
+    '<svg viewBox="0 0 80 80" width="78" height="78">' +
+    '<path d="' + track + '" fill="none" stroke="var(--line)" stroke-width="7" stroke-linecap="round"></path>' +
+    '<path d="' + fillArc + '" fill="none" stroke="' + color + '" stroke-width="7" stroke-linecap="round"></path>' +
+    '<circle cx="' + dot[0].toFixed(1) + '" cy="' + dot[1].toFixed(1) + '" r="4.5" fill="' + color + '"></circle>' +
+    '<text x="40" y="44" text-anchor="middle" class="gval">' + escapeHtml(fmtShort(value)) + '</text>' +
+    '</svg>' +
+    '<div class="glabel">' + escapeHtml(label) + '</div>' +
+    deltaHtml +
+    '</div>';
+}
+function ledgerTotals(data, from, to){
+  var inRange = function(dstr){ return dstr >= from && dstr <= to; };
+  var sales = (data.sales || []).filter(function(s){ return s.BranchID === STATE.currentBranch && inRange(s.Date); });
+  var incomes = (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
+  var expenses = (data.expenses || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
+  var income = 0, expense = 0;
+  sales.forEach(function(s){ income += Number(s.Total) || 0; });
+  incomes.forEach(function(e){ income += Number(e.Amount) || 0; });
+  expenses.forEach(function(e){ expense += Number(e.Amount) || 0; });
+  var count = sales.length + incomes.length + expenses.length;
+  return { income: income, expense: expense, net: income - expense, count: count, sales: sales, incomes: incomes, expenses: expenses };
+}
+function renderDashboard(){
+  $('dashBranchChip').textContent = branchName(STATE.currentBranch);
+  if (!STATE.dashPeriod || !STATE.dashPeriod.from) {
+    var r0 = periodRange('today');
+    STATE.dashPeriod = { type: 'today', from: r0.from, to: r0.to };
+  }
+  var period = STATE.dashPeriod;
+  var rangeLabel = (period.from === period.to) ? fmtDateLao(period.from) : (fmtDateLao(period.from) + ' - ' + fmtDateLao(period.to));
+  $('dashPeriodLabel').textContent = '📈 ' + periodTypeLabel(period.type) + ' (' + rangeLabel + ')';
+  var prev = previousPeriodRange(period.from, period.to);
+  var earliest = prev.from < period.from ? prev.from : period.from;
+  var days = Math.max(2, daysBetweenStr(earliest, todayStr()) + 2);
+  run('getRecentData', [days], function(data){
+    var cur = ledgerTotals(data, period.from, period.to);
+    var prevT = ledgerTotals(data, prev.from, prev.to);
+    var maxVal = Math.max(cur.income, cur.expense, 1);
+    $('dashGauges').innerHTML =
+      gaugeSvg(cur.count, cur.count / Math.max(cur.count, prevT.count, 1), 'var(--in2)', 'ຈຳນວນລາຍການ', pctDelta(cur.count, prevT.count), true) +
+      gaugeSvg(cur.income, cur.income / maxVal, 'var(--in)', 'ລາຍຮັບລວມ', pctDelta(cur.income, prevT.income), true) +
+      gaugeSvg(cur.expense, cur.expense / maxVal, 'var(--out)', 'ລາຍຈ່າຍລວມ', pctDelta(cur.expense, prevT.expense), false);
+    $('dashNetCard').className = 'scard ' + (cur.net < 0 ? 'neg' : 'net');
+    $('dashNetCard').innerHTML = '<div class="label">⚖️ ກຳໄລ/ຂາດທຶນສຸດທິ (ລາຍຮັບ - ລາຍຈ່າຍ)</div><div class="val">' + fmt(cur.net) + ' ກີບ</div>';
+
+    var map = {};
+    function day(d){ if (!map[d]) map[d] = { income: 0, expense: 0 }; return map[d]; }
+    cur.sales.forEach(function(s){ day(s.Date).income += Number(s.Total) || 0; });
+    cur.incomes.forEach(function(e){ day(e.Date).income += Number(e.Amount) || 0; });
+    cur.expenses.forEach(function(e){ day(e.Date).expense += Number(e.Amount) || 0; });
+    renderDashboardChart(map);
+
+    var catById = {};
+    STATE.products.forEach(function(p){ catById[p.ID] = p.Category || 'ອື່ນໆ'; });
+    var incomeCat = {}, expenseCat = {};
+    var itemsBySale = {};
+    (data.items || []).forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
+    cur.sales.forEach(function(s){
+      (itemsBySale[s.ID] || []).forEach(function(it){
+        var cat = catById[it.ProductID] || 'ອື່ນໆ';
+        incomeCat[cat] = (incomeCat[cat] || 0) + (Number(it.LineTotal) || 0);
+      });
+    });
+    cur.incomes.forEach(function(e){
+      var cat = e.Category || 'ອື່ນໆ';
+      incomeCat[cat] = (incomeCat[cat] || 0) + (Number(e.Amount) || 0);
+    });
+    cur.expenses.forEach(function(e){
+      var cat = e.Category || 'ອື່ນໆ';
+      expenseCat[cat] = (expenseCat[cat] || 0) + (Number(e.Amount) || 0);
+    });
+    var cats = Object.keys(incomeCat).concat(Object.keys(expenseCat)).filter(function(k, i, arr){ return arr.indexOf(k) === i; });
+    cats.sort(function(a, b){ return (incomeCat[b] || 0) + (expenseCat[b] || 0) - ((incomeCat[a] || 0) + (expenseCat[a] || 0)); });
+    var body = $('dashCatBody');
+    body.innerHTML = '';
+    cats.forEach(function(k){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + escapeHtml(k) + '</td><td class="num" style="color:var(--in)">' + (incomeCat[k] ? fmt(incomeCat[k]) : '-') + '</td><td class="num" style="color:var(--out)">' + (expenseCat[k] ? fmt(expenseCat[k]) : '-') + '</td>';
+      body.appendChild(tr);
+    });
+    $('dashEmpty').style.display = cats.length ? 'none' : 'block';
+  });
+}
+function renderDashboardChart(map){
+  var box = $('dashChart');
+  var keys = Object.keys(map).sort();
+  if (!keys.length) { box.innerHTML = ''; return; }
+  var maxAbs = 1;
+  keys.forEach(function(k){ var m = map[k]; maxAbs = Math.max(maxAbs, m.income, m.expense); });
+  var barW = 9, gap = 7, groupGap = 10, H = 120, maxH = 86;
+  var w = keys.length * (barW * 2 + gap + groupGap) + groupGap;
+  var svg = '<svg viewBox="0 0 ' + w + ' ' + (H + 18) + '" width="' + w + '" height="' + (H + 18) + '" style="display:block;max-width:100%">';
+  svg += '<line x1="0" y1="' + maxH + '" x2="' + w + '" y2="' + maxH + '" stroke="var(--line)" stroke-width="1"></line>';
+  keys.forEach(function(k, i){
+    var m = map[k];
+    var hIn = Math.round((m.income / maxAbs) * (maxH - 4));
+    var hOut = Math.round((m.expense / maxAbs) * (maxH - 4));
+    var x = groupGap + i * (barW * 2 + gap + groupGap);
+    svg += '<rect x="' + x + '" y="' + (maxH - hIn) + '" width="' + barW + '" height="' + Math.max(hIn, 1) + '" rx="2" fill="var(--in)"><title>' + k + ' ລາຍຮັບ: ' + fmt(m.income) + '</title></rect>';
+    svg += '<rect x="' + (x + barW + gap) + '" y="' + (maxH - hOut) + '" width="' + barW + '" height="' + Math.max(hOut, 1) + '" rx="2" fill="var(--out)"><title>' + k + ' ລາຍຈ່າຍ: ' + fmt(m.expense) + '</title></rect>';
+    var day = k.split('-')[2];
+    svg += '<text x="' + (x + barW) + '" y="' + (H + 12) + '" font-size="9" text-anchor="middle" fill="var(--muted)">' + day + '</text>';
+  });
+  svg += '</svg>';
+  box.innerHTML = '<div class="hint">↔️ ເລື່ອນເບິ່ງໄດ້ · ສີຂຽວ=ລາຍຮັບ ສີແດງ=ລາຍຈ່າຍ</div><div class="tbl-scroll">' + svg + '</div>';
 }
 
 /* ---------- start ---------- */
