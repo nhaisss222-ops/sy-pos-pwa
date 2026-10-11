@@ -1,4 +1,4 @@
-var CACHE_NAME = 'sy-pos-shell-v3';
+var CACHE_NAME = 'sy-pos-shell-v4';
 var SHELL_FILES = [
   './manifest.json',
   './icon-192.png',
@@ -37,7 +37,7 @@ self.addEventListener('fetch', function(event){
   // ໜ້າຫຼັກ (index.html): ເອົາເຄືອຂ່າຍກ່ອນສະເໝີ ເພື່ອບໍ່ໃຫ້ຕິດແຄັດໜ້າເກົ່າເມື່ອອັບເດດແອັບ, offline ຄ່ອຍໃຊ້ cache
   if (event.request.mode === 'navigate' || isNetworkFirst(url)) {
     event.respondWith(
-      fetch(event.request).then(function(resp){
+      fetch(event.request, { cache: 'no-store' }).then(function(resp){
         if (resp && resp.status === 200) {
           var respClone = resp.clone();
           caches.open(CACHE_NAME).then(function(cache){ cache.put(event.request, respClone); });
