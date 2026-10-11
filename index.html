@@ -72,15 +72,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid #0f7a5a33;border-color
 .chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;cursor:pointer;color:var(--muted)}
 .chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px}
-.pcard{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fbfcfc;cursor:pointer;text-align:left}
+.pcard{position:relative;border:1px solid var(--line);border-radius:12px;padding:0;background:var(--accent-soft);cursor:pointer;text-align:center;overflow:hidden;aspect-ratio:1/1}
 .pcard:hover{border-color:var(--accent)}
-.pcard .nm{font-size:13.5px;font-weight:600;line-height:1.3;min-height:34px}
-.pcard .pr{font-size:14px;color:var(--accent);font-weight:700;margin-top:4px}
-.pcard .st{font-size:11.5px;color:var(--muted);margin-top:2px}
-.pcard .st.low{color:var(--out);font-weight:600}
+.pcard .thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;margin:0;border-radius:0;background:#eef2f0;display:block}
+.pcard .thumb.ph{display:flex;align-items:center;justify-content:center;font-size:42px;color:var(--accent);background:var(--accent-soft)}
+.pcard .info{position:absolute;left:0;right:0;bottom:0;padding:20px 8px 8px;background:linear-gradient(to top, rgba(10,20,16,.82), rgba(10,20,16,.5) 60%, rgba(10,20,16,0) 100%)}
+.pcard .nm{font-size:13px;font-weight:700;line-height:1.3;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.pcard .pr{font-size:13.5px;color:#eafff2;font-weight:800;margin-top:3px;text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.pcard .st{position:absolute;top:6px;right:6px;font-size:10.5px;color:#fff;background:rgba(10,20,16,.5);padding:2px 7px;border-radius:999px}
+.pcard .st.low{background:var(--out)}
 .pcard[disabled]{opacity:.45;cursor:not-allowed}
-.pcard .thumb{width:100%;height:60px;object-fit:cover;border-radius:8px;margin-bottom:6px;background:#eef2f0;display:block}
-.pcard .thumb.ph{display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--accent);background:var(--accent-soft)}
 .row-thumb{width:30px;height:30px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:7px}
 .img-preview{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#eef2f0;display:block}
 .empty{padding:24px 16px;text-align:center;color:var(--muted);font-size:14px}
@@ -698,9 +699,10 @@ function renderPOS(){
     card.className = 'pcard';
     var low = Number(p.MinStock) > 0 && qty <= Number(p.MinStock);
     var thumb = p.Image ? '<img class="thumb" src="' + p.Image + '">' : '<div class="thumb ph">🛍️</div>';
-    card.innerHTML = thumb + '<div class="nm">' + escapeHtml(p.Name) + '</div>' +
-      '<div class="pr">' + fmt(p.Price) + ' ກີບ</div>' +
-      '<div class="st' + (low ? ' low' : '') + '">ສະຕັອກ: ' + fmt(qty) + (p.Unit ? (' ' + escapeHtml(p.Unit)) : '') + '</div>';
+    card.innerHTML = thumb +
+      '<div class="st' + (low ? ' low' : '') + '">' + fmt(qty) + (p.Unit ? (' ' + escapeHtml(p.Unit)) : '') + '</div>' +
+      '<div class="info"><div class="nm">' + escapeHtml(p.Name) + '</div>' +
+      '<div class="pr">' + fmt(p.Price) + ' ກີບ</div></div>';
     card.addEventListener('click', function(){ addToCart(p); });
     grid.appendChild(card);
   });
