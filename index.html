@@ -72,20 +72,20 @@ input:focus,select:focus,textarea:focus{outline:2px solid #0f7a5a33;border-color
 .chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;cursor:pointer;color:var(--muted)}
 .chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
-.pcard{position:relative;border:1px solid var(--line);border-radius:12px;padding:0;background:var(--accent-soft);cursor:pointer;text-align:center;overflow:hidden;aspect-ratio:1/1}
+.pcard{position:relative;border:1px solid var(--line);border-radius:12px;padding:0;background:#fff;cursor:pointer;text-align:center;overflow:hidden;display:flex;flex-direction:column}
 .pcard:hover{border-color:var(--accent)}
-.pcard .thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;margin:0;border-radius:0;background:#eef2f0;display:block}
-.pcard .info{position:absolute;left:0;right:0;bottom:0;padding:20px 8px 8px;background:linear-gradient(to top, rgba(10,20,16,.82), rgba(10,20,16,.5) 60%, rgba(10,20,16,0) 100%)}
-.pcard .nm{font-size:13px;font-weight:700;line-height:1.3;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45)}
-.pcard .pr{font-size:13.5px;color:#eafff2;font-weight:800;margin-top:3px;text-shadow:0 1px 3px rgba(0,0,0,.45)}
-.pcard .st{position:absolute;top:6px;right:6px;font-size:10.5px;color:#fff;background:rgba(10,20,16,.5);padding:2px 7px;border-radius:999px}
+.pcard .thumb{position:relative;width:100%;aspect-ratio:1/1;object-fit:cover;margin:0;border-radius:0;background:#eef2f0;display:block}
+.pcard .info{padding:7px 8px 9px;background:#fff}
+.pcard .nm{font-size:12.5px;font-weight:700;line-height:1.3;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard .pr{font-size:13.5px;color:var(--accent);font-weight:800;margin-top:3px}
+.pcard .st{position:absolute;top:6px;right:6px;font-size:10.5px;color:#fff;background:rgba(10,20,16,.55);padding:2px 7px;border-radius:999px}
 .pcard .st.low{background:var(--out)}
 .pcard[disabled]{opacity:.45;cursor:not-allowed}
 /* ສິນຄ້າທີ່ບໍ່ມີຮູບ: ສະແດງເປັນກ່ອງສີເທົາລ້ວນ, ບໍ່ມີຮູບ/ໄອຄອນ, ມີແຕ່ຕົວໜັງສືກາງກ່ອງ */
-.pcard.noimg{background:#e4e8ea}
-.pcard.noimg .info{position:static;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px;background:none}
-.pcard.noimg .nm{color:#2a3338;text-shadow:none}
-.pcard.noimg .pr{color:#51616a;text-shadow:none}
+.pcard.noimg{background:#e4e8ea;aspect-ratio:1/1}
+.pcard.noimg .info{position:static;height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px;background:none}
+.pcard.noimg .nm{color:#2a3338;white-space:normal}
+.pcard.noimg .pr{color:#51616a}
 .pcard.noimg .st{color:#2a3338;background:rgba(255,255,255,.65)}
 .pcard.noimg .st.low{color:#fff;background:var(--out)}
 .row-thumb{width:30px;height:30px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:7px}
