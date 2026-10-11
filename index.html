@@ -27,6 +27,7 @@ font-family:"Noto Sans Lao","Noto Sans Lao UI","Phetsarath OT","Saysettha OT","S
 font-size:15px; line-height:1.55; padding-bottom:74px;
 }
 .wrap{max-width:1080px;margin:0 auto;padding:16px}
+.sticky-head{position:sticky;top:0;z-index:55;background:var(--bg);padding-top:16px;margin-top:-16px;padding-bottom:6px}
 header.top{
 background:linear-gradient(135deg,#0f7a5a,#0b5f47); color:#fff;
 padding:16px; border-radius:var(--radius); box-shadow:var(--shadow);
@@ -104,6 +105,7 @@ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 .modal{position:fixed;inset:0;background:rgba(16,33,29,.45);display:none;align-items:flex-end;justify-content:center;z-index:70;padding:0}
 .modal.show{display:flex}
 .modal .box{background:#fff;border-radius:18px 18px 0 0;padding:18px 16px 22px;max-width:520px;width:100%;box-shadow:0 -10px 40px rgba(0,0,0,.25);max-height:86vh;overflow:auto}
+.modal .box.lg{max-width:720px}
 @media (min-width:600px){.modal{align-items:center}.modal .box{border-radius:var(--radius);max-height:90vh}}
 .modal h3{margin:0 0 10px;font-size:16px}
 .period-opt{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px}
@@ -120,9 +122,11 @@ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 .qtybox{display:flex;align-items:center;gap:6px}
 .qtybox button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:16px;cursor:pointer;line-height:1}
 .qtybox span{min-width:22px;text-align:center;font-weight:600;font-size:13.5px}
-.pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
-.pay-opt{border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;cursor:pointer;background:#fbfcfc;font-size:14px}
+.pay-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0}
+.pay-opt{border:1px solid var(--line);border-radius:10px;padding:10px 4px;text-align:center;cursor:pointer;background:#fbfcfc;font-size:12.5px}
 .pay-opt.on{border-color:var(--accent);background:var(--accent-soft);font-weight:700;color:var(--accent)}
+.split-fields{display:none;gap:8px;margin:-6px 0 12px}
+.split-fields.show{display:grid;grid-template-columns:1fr 1fr}
 
 /* tables */
 .tbl-scroll{overflow-x:auto}
@@ -201,6 +205,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 </head>
 <body>
 <div class="wrap">
+<div class="sticky-head">
 <header class="top">
 <h1 id="shopTitle">🛍️ ຂາຍເຄື່ອງ</h1>
 <div class="branch-pick">
@@ -216,28 +221,18 @@ details.inline .sec-body{padding:2px 12px 12px}
 <button data-tab="expenses">📒 ລົງບັນຊີ</button>
 <button data-tab="dashboard">📈 Dashboard</button>
 </div>
+</div>
 
 <!-- ===== POS ===== -->
 <section class="view on" id="view-pos">
 <div class="card">
-<h2>🛒 ເລືອກສິນຄ້າ <span class="chip" id="heldBillsChip">🧾 ບິນລໍຖ້າ 0</span></h2>
+<h2>🛒 ເລືອກສິນຄ້າ <span style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip" id="heldBillsChip">🧾 ບິນລໍຖ້າ 0</span><span class="chip" id="paidBillsChip">✅ ບິນຈ່າຍແລ້ວ 0</span></span></h2>
 <div class="pos-top">
 <input type="text" id="posSearch" placeholder="🔍 ຄົ້ນຫາສິນຄ້າ...">
 </div>
 <div class="chip-row" id="catChips"></div>
 <div class="pgrid" id="posGrid"></div>
 <div class="empty" id="posEmpty" style="display:none">ບໍ່ພົບສິນຄ້າ</div>
-</div>
-
-<div class="card">
-<h2>🧾 ການຂາຍມື້ນີ້ <span class="chip" id="todayChip" style="cursor:default">0 ລາຍການ</span></h2>
-<div class="tbl-scroll">
-<table id="todayTbl">
-<thead><tr><th>ເວລາ</th><th>ລາຍການ</th><th style="text-align:right">ຍອດ</th><th>ຮັບເງິນ</th><th></th></tr></thead>
-<tbody id="todayBody"></tbody>
-</table>
-</div>
-<div class="empty" id="todayEmpty">ຍັງບໍ່ມີການຂາຍມື້ນີ້</div>
 </div>
 </section>
 
@@ -493,6 +488,12 @@ details.inline .sec-body{padding:2px 12px 12px}
 <label class="fld">ຈຳນວນເງິນ (ກີບ)
 <input type="text" id="closeExpAmount" inputmode="decimal" placeholder="0">
 </label>
+<label class="fld">ຈ່າຍແບບໃດ
+<select id="closeExpPayType">
+<option value="cash">💵 ເງິນສົດ</option>
+<option value="transfer">🏦 ເງິນໂອນ</option>
+</select>
+</label>
 <label class="fld full">ລາຍການ / ໝາຍເຫດ
 <input type="text" id="closeExpNote" placeholder="ບໍ່ຈຳເປັນ">
 </label>
@@ -574,6 +575,15 @@ details.inline .sec-body{padding:2px 12px 12px}
 <div class="pay-grid">
 <div class="pay-opt on" id="payCash" data-v="cash">💵 ເງິນສົດ</div>
 <div class="pay-opt" id="payTransfer" data-v="transfer">🏦 ເງິນໂອນ</div>
+<div class="pay-opt" id="paySplit" data-v="split">🔀 ແຍກຈ່າຍ</div>
+</div>
+<div class="split-fields" id="splitFields">
+<label class="fld">💵 ເງິນສົດ (ກີບ)
+<input type="text" id="splitCashAmount" inputmode="decimal" placeholder="0">
+</label>
+<label class="fld">🏦 ເງິນໂອນ (ກີບ)
+<input type="text" id="splitTransferAmount" inputmode="decimal" placeholder="0">
+</label>
 </div>
 <label class="fld">ພະນັກງານຂາຍ (ບໍ່ຈຳເປັນ)
 <select id="saleEmployee"><option value="">(ບໍ່ລະບຸ)</option></select>
@@ -604,12 +614,25 @@ details.inline .sec-body{padding:2px 12px 12px}
 </div>
 </div>
 
+<!-- ===== PAID BILLS MODAL ===== -->
+<div class="modal" id="paidBillsModal">
+<div class="box">
+<h3>✅ ບິນຈ່າຍແລ້ວ (ມື້ນີ້)</h3>
+<div id="paidBillsList"></div>
+<div class="empty" id="paidBillsEmpty" style="display:none">ຍັງບໍ່ມີບິນຈ່າຍແລ້ວ</div>
+<div class="row" style="margin-top:12px">
+<button class="btn ghost" id="closePaidBillsBtn" style="flex:1">ປິດ</button>
+</div>
+</div>
+</div>
+
 <!-- ===== SALE DETAIL MODAL ===== -->
 <div class="modal" id="saleDetailModal">
-<div class="box">
+<div class="box lg">
 <h3>🧾 ລາຍລະອຽດບິນ</h3>
 <div id="saleDetailMeta" style="font-size:12.5px;color:var(--muted);margin-bottom:8px"></div>
 <div id="saleDetailLines"></div>
+<div id="saleDetailSplit" style="display:none;font-size:12.5px;color:var(--muted);margin-top:8px"></div>
 <div class="row" style="justify-content:space-between;margin-top:10px">
 <span style="font-weight:600">ລວມທັງໝົດ</span>
 <span class="tot" id="saleDetailTotal">0 ກີບ</span>
@@ -960,7 +983,7 @@ $('closeDayBtn').addEventListener('click', function(){
         category: $('closeExpCategory').value,
         item: $('closeExpNote').value.trim(),
         amount: expAmount,
-        paymentType: 'cash',
+        paymentType: $('closeExpPayType').value,
         note: $('closeExpNote').value.trim()
       }], finishClose);
     } else {
@@ -1167,20 +1190,41 @@ $('holdBillBtn').addEventListener('click', function(){
 });
 
 var payType = 'cash';
-$('payCash').addEventListener('click', function(){ payType = 'cash'; $('payCash').classList.add('on'); $('payTransfer').classList.remove('on'); });
-$('payTransfer').addEventListener('click', function(){ payType = 'transfer'; $('payTransfer').classList.add('on'); $('payCash').classList.remove('on'); });
+function setPayType(v){
+  payType = v;
+  $('payCash').classList.toggle('on', v === 'cash');
+  $('payTransfer').classList.toggle('on', v === 'transfer');
+  $('paySplit').classList.toggle('on', v === 'split');
+  $('splitFields').classList.toggle('show', v === 'split');
+  if (v === 'split' && !parseAmount($('splitCashAmount').value) && !parseAmount($('splitTransferAmount').value)) {
+    $('splitCashAmount').value = cartTotal();
+    $('splitTransferAmount').value = 0;
+  }
+}
+$('payCash').addEventListener('click', function(){ setPayType('cash'); });
+$('payTransfer').addEventListener('click', function(){ setPayType('transfer'); });
+$('paySplit').addEventListener('click', function(){ setPayType('split'); });
 
 $('checkoutBtn').addEventListener('click', function(){
   if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
   if (!STATE.cart.length) { toast('❌ ກະຕ່າວ່າງເປົ່າ'); return; }
   var items = STATE.cart.map(function(l){ return { productId: l.productId, name: l.name, qty: l.qty, price: l.price }; });
   var sale = { branchId: STATE.currentBranch, paymentType: payType, items: items, note: $('saleNote').value || '', employeeId: $('saleEmployee').value || '' };
+  if (payType === 'split') {
+    var cashAmt = parseAmount($('splitCashAmount').value);
+    var transferAmt = parseAmount($('splitTransferAmount').value);
+    if (Math.abs((cashAmt + transferAmt) - cartTotal()) > 1) { toast('❌ ຍອດສົດ+ໂອນ ຕ້ອງເທົ່າກັບຍອດລວມ'); return; }
+    sale.cashAmount = cashAmt;
+    sale.transferAmount = transferAmt;
+  }
   run('recordSale', [sale], function(res){
     toast('✅ ຂາຍສຳເລັດ ' + fmt(res.total) + ' ກີບ');
     items.forEach(function(it){ adjustLocalStock(STATE.currentBranch, it.productId, -it.qty); });
     STATE.cart = [];
     $('saleNote').value = '';
     $('holdCustomerName').value = '';
+    $('splitCashAmount').value = ''; $('splitTransferAmount').value = '';
+    setPayType('cash');
     $('cartModal').classList.remove('show');
     renderCart();
     renderPOS();
@@ -1193,46 +1237,70 @@ $('checkoutBtn').addEventListener('click', function(){
   });
 });
 
-/* ---------- today sales ---------- */
+/* ---------- today sales / ບິນຈ່າຍແລ້ວ ---------- */
+function payIconFor(s){
+  return s.PaymentType === 'cash' ? '💵' : (s.PaymentType === 'transfer' ? '🏦' : '🔀');
+}
 function renderTodaySales(){
   run('getRecentData', [2], function(data){
     var today = todayStr();
     var rows = data.sales.filter(function(s){ return s.Date === today && s.BranchID === STATE.currentBranch; });
-    rows.sort(function(a, b){ return a.Time < b.Time ? 1 : -1; });
-    var body = $('todayBody');
-    body.innerHTML = '';
-    var itemsBySale = {};
-    data.items.forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
-    rows.forEach(function(s){
-      var itNames = (itemsBySale[s.ID] || []).map(function(it){ return it.ProductName + ' x' + it.Qty; }).join(', ');
-      var tr = document.createElement('tr');
-      tr.className = 'clickable-row';
-      tr.innerHTML = '<td>' + s.Time + '</td><td>' + escapeHtml(itNames) + '</td><td class="num">' + fmt(s.Total) + '</td><td>' + (s.PaymentType === 'cash' ? '💵' : '🏦') + '</td><td></td>';
-      var tdBtn = tr.lastElementChild;
-      var btn = document.createElement('button');
-      btn.className = 'icon-btn'; btn.textContent = '🗑️';
-      btn.addEventListener('click', function(ev){ ev.stopPropagation(); confirmVoid(s.ID, s.BranchID, itemsBySale[s.ID] || []); });
-      tdBtn.appendChild(btn);
-      tr.addEventListener('click', function(){ showSaleDetail(s, itemsBySale[s.ID] || []); });
-      body.appendChild(tr);
-    });
-    $('todayChip').textContent = rows.length + ' ລາຍການ';
-    $('todayEmpty').style.display = rows.length ? 'none' : 'block';
+    $('paidBillsChip').textContent = '✅ ບິນຈ່າຍແລ້ວ ' + rows.length;
   });
 }
 
-function confirmVoid(saleId, branchId, items){
+function openPaidBillsModal(){
+  run('getRecentData', [2], function(data){
+    var today = todayStr();
+    var rows = data.sales.filter(function(s){ return s.Date === today && s.BranchID === STATE.currentBranch; });
+    rows.sort(function(a, b){ return a.Time < b.Time ? 1 : -1; });
+    var itemsBySale = {};
+    data.items.forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
+    renderPaidBillsModal(rows, itemsBySale);
+    $('paidBillsChip').textContent = '✅ ບິນຈ່າຍແລ້ວ ' + rows.length;
+    $('paidBillsModal').classList.add('show');
+  });
+}
+$('paidBillsChip').addEventListener('click', openPaidBillsModal);
+$('closePaidBillsBtn').addEventListener('click', function(){ $('paidBillsModal').classList.remove('show'); });
+
+function renderPaidBillsModal(rows, itemsBySale){
+  var box = $('paidBillsList');
+  box.innerHTML = '';
+  rows.forEach(function(s){
+    var items = itemsBySale[s.ID] || [];
+    var itNames = items.map(function(it){ return it.ProductName + ' x' + it.Qty; }).join(', ');
+    var line = document.createElement('div');
+    line.className = 'held-line clickable-row';
+    line.innerHTML = '<div class="nm">' + s.Time + ' · ' + escapeHtml(itNames || 'ການຂາຍ') + '<div class="meta">' + payIconFor(s) + (s.PaymentType === 'split' ? ' ແຍກຈ່າຍ (💵' + fmt(s.CashAmount) + ' · 🏦' + fmt(s.TransferAmount) + ')' : (s.PaymentType === 'cash' ? ' ເງິນສົດ' : ' ເງິນໂອນ')) + '</div></div>' +
+      '<div class="tot">' + fmt(s.Total) + '</div>';
+    line.addEventListener('click', function(){ showSaleDetail(s, items); });
+    var delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn'; delBtn.textContent = '🗑️';
+    delBtn.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      confirmVoid(s.ID, s.BranchID, items, function(){ $('paidBillsModal').classList.remove('show'); });
+    });
+    line.appendChild(delBtn);
+    box.appendChild(line);
+  });
+  $('paidBillsEmpty').style.display = rows.length ? 'none' : 'block';
+}
+
+function confirmVoid(saleId, branchId, items, after){
   if (!window.confirm('ຍົກເລີກລາຍການຂາຍນີ້ (ສະຕັອກຈະຄືນ)?')) return;
   run('voidSale', [saleId], function(){
     toast('✅ ຍົກເລີກແລ້ວ');
     items.forEach(function(it){ adjustLocalStock(branchId, it.ProductID, Number(it.Qty) || 0); });
     renderPOS();
     renderTodaySales();
+    if (after) after();
   });
 }
 
 function showSaleDetail(sale, items){
-  $('saleDetailMeta').textContent = sale.Date + ' ' + sale.Time + ' · ' + (sale.PaymentType === 'cash' ? '💵 ເງິນສົດ' : '🏦 ເງິນໂອນ') + (employeeName(sale.EmployeeID) ? ' · 👤 ' + employeeName(sale.EmployeeID) : '') + (sale.Note ? ' · ' + sale.Note : '');
+  var payLabel = sale.PaymentType === 'cash' ? '💵 ເງິນສົດ' : (sale.PaymentType === 'transfer' ? '🏦 ເງິນໂອນ' : '🔀 ແຍກຈ່າຍ');
+  $('saleDetailMeta').textContent = sale.Date + ' ' + sale.Time + ' · ' + payLabel + (employeeName(sale.EmployeeID) ? ' · 👤 ' + employeeName(sale.EmployeeID) : '') + (sale.Note ? ' · ' + sale.Note : '');
   var box = $('saleDetailLines');
   box.innerHTML = '';
   items.forEach(function(it){
@@ -1242,6 +1310,12 @@ function showSaleDetail(sale, items){
       '<div style="font-weight:700;font-size:13.5px">' + fmt(it.LineTotal) + '</div>';
     box.appendChild(row);
   });
+  if (sale.PaymentType === 'split') {
+    $('saleDetailSplit').style.display = 'block';
+    $('saleDetailSplit').innerHTML = '💵 ເງິນສົດ: ' + fmt(sale.CashAmount) + ' ກີບ &nbsp;·&nbsp; 🏦 ເງິນໂອນ: ' + fmt(sale.TransferAmount) + ' ກີບ';
+  } else {
+    $('saleDetailSplit').style.display = 'none';
+  }
   $('saleDetailTotal').textContent = fmt(sale.Total) + ' ກີບ';
   $('saleDetailModal').classList.add('show');
 }
@@ -1604,7 +1678,8 @@ function renderExpenses(){
 
     var inCash = 0, inTransfer = 0, outCash = 0, outTransfer = 0;
     data.sales.filter(function(s){ return s.BranchID === STATE.currentBranch; }).forEach(function(s){
-      if (s.PaymentType === 'transfer') inTransfer += Number(s.Total) || 0; else inCash += Number(s.Total) || 0;
+      if (s.PaymentType === 'split') { inCash += Number(s.CashAmount) || 0; inTransfer += Number(s.TransferAmount) || 0; }
+      else if (s.PaymentType === 'transfer') inTransfer += Number(s.Total) || 0; else inCash += Number(s.Total) || 0;
     });
     (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch; }).forEach(function(e){
       if (e.PaymentType === 'transfer') inTransfer += Number(e.Amount) || 0; else inCash += Number(e.Amount) || 0;
@@ -1716,22 +1791,27 @@ function renderPeriodCards(){
     var sales = (data.sales || []).filter(function(s){ return s.BranchID === STATE.currentBranch && inRange(s.Date); });
     var expenses = (data.expenses || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
     var incomes = (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
-    var cash = 0, transfer = 0, exp = 0;
+    var cash = 0, transfer = 0, expCash = 0, expTransfer = 0;
     sales.forEach(function(s){
-      if (s.PaymentType === 'cash') cash += Number(s.Total) || 0;
+      if (s.PaymentType === 'split') { cash += Number(s.CashAmount) || 0; transfer += Number(s.TransferAmount) || 0; }
+      else if (s.PaymentType === 'cash') cash += Number(s.Total) || 0;
       else if (s.PaymentType === 'transfer') transfer += Number(s.Total) || 0;
     });
     incomes.forEach(function(e){
       if (e.PaymentType === 'cash') cash += Number(e.Amount) || 0;
       else if (e.PaymentType === 'transfer') transfer += Number(e.Amount) || 0;
     });
-    expenses.forEach(function(e){ exp += Number(e.Amount) || 0; });
-    var net = cash + transfer - exp;
+    expenses.forEach(function(e){
+      if (e.PaymentType === 'transfer') expTransfer += Number(e.Amount) || 0;
+      else expCash += Number(e.Amount) || 0;
+    });
+    var remainCash = cash - expCash, remainTransfer = transfer - expTransfer;
     $('sumCards').innerHTML =
       '<div class="scard"><div class="label">💵 ຂາຍເງິນສົດ</div><div class="val">' + fmt(cash) + '</div></div>' +
       '<div class="scard"><div class="label">🏦 ຂາຍເງິນໂອນ</div><div class="val">' + fmt(transfer) + '</div></div>' +
-      '<div class="scard"><div class="label">➖ ລາຍຈ່າຍ</div><div class="val">' + fmt(exp) + '</div></div>' +
-      '<div class="scard ' + (net < 0 ? 'neg' : 'net') + '"><div class="label">ກຳໄລສຸດທິ</div><div class="val">' + fmt(net) + '</div></div>';
+      '<div class="scard"><div class="label">➖ ລາຍຈ່າຍ</div><div class="val">' + fmt(expCash + expTransfer) + '</div></div>' +
+      '<div class="scard ' + (remainCash < 0 ? 'neg' : 'net') + '"><div class="label">💵 ຍອດເຫຼືອ (ສົດ)</div><div class="val">' + fmt(remainCash) + '</div></div>' +
+      '<div class="scard ' + (remainTransfer < 0 ? 'neg' : 'net') + '"><div class="label">🏦 ຍອດເຫຼືອ (ໂອນ)</div><div class="val">' + fmt(remainTransfer) + '</div></div>';
   });
 }
 
@@ -1792,7 +1872,11 @@ function renderSummary(){
 
     var map = {};
     function day(d){ if (!map[d]) map[d] = { cash: 0, transfer: 0, exp: 0 }; return map[d]; }
-    sales.forEach(function(s){ var m = day(s.Date); m[s.PaymentType] += Number(s.Total) || 0; });
+    sales.forEach(function(s){
+      var m = day(s.Date);
+      if (s.PaymentType === 'split') { m.cash += Number(s.CashAmount) || 0; m.transfer += Number(s.TransferAmount) || 0; }
+      else m[s.PaymentType] += Number(s.Total) || 0;
+    });
     incomes.forEach(function(e){ var m = day(e.Date); m[e.PaymentType] += Number(e.Amount) || 0; });
     expenses.forEach(function(e){ var m = day(e.Date); m.exp += Number(e.Amount) || 0; });
 
