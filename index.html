@@ -24,7 +24,7 @@ html,body{margin:0;padding:0}
 body{
 background:var(--bg); color:var(--ink);
 font-family:"Noto Sans Lao","Noto Sans Lao UI","Phetsarath OT","Saysettha OT","Segoe UI",system-ui,-apple-system,sans-serif;
-font-size:15px; line-height:1.55; padding-bottom:74px;
+font-size:15px; line-height:1.55; padding-bottom:74px; padding-left:66px;
 }
 .wrap{max-width:1080px;margin:0 auto;padding:16px}
 .sticky-head{position:sticky;top:0;z-index:55;background:var(--bg);padding-top:16px;margin-top:-16px;padding-bottom:6px}
@@ -40,11 +40,18 @@ border:none;border-radius:10px;padding:9px 11px;font-family:inherit;font-size:14
 background:rgba(255,255,255,.16);color:#fff;
 }
 .branch-pick select option{color:#16211d}
-.tabs{display:flex;gap:6px;margin-top:12px;overflow-x:auto;padding-bottom:2px}
-.tabs button{
-flex:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;
-font-family:inherit;font-size:13.5px;color:var(--muted);cursor:pointer;white-space:nowrap;
+.tabs{
+position:fixed;top:0;left:0;bottom:0;z-index:60;width:66px;
+display:flex;flex-direction:column;align-items:stretch;gap:4px;
+padding:14px 6px;overflow-y:auto;background:var(--card);border-right:1px solid var(--line);
 }
+.tabs button{
+flex:none;border:1px solid transparent;background:transparent;border-radius:12px;padding:8px 2px;
+font-family:inherit;color:var(--muted);cursor:pointer;white-space:normal;
+display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+}
+.tabs button .tab-ic{font-size:21px;line-height:1}
+.tabs button .tab-lb{font-size:9.5px;line-height:1.15;text-align:center}
 .tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 section.view{display:none;margin-top:14px}
 section.view.on{display:block}
@@ -200,10 +207,21 @@ details.inline .sec-body{padding:2px 12px 12px}
 @media (max-width:600px){
 .wrap{padding:12px}
 .grid2{grid-template-columns:1fr}
+body{padding-left:56px}
+.tabs{width:56px;padding:10px 4px}
+.tabs button .tab-ic{font-size:19px}
+.tabs button .tab-lb{font-size:8.5px}
 }
 </style>
 </head>
 <body>
+<nav class="tabs" id="tabs">
+<button class="on" data-tab="pos" title="ຂາຍເຄື່ອງ"><span class="tab-ic">🛒</span><span class="tab-lb">ຂາຍເຄື່ອງ</span></button>
+<button data-tab="products" title="ສິນຄ້າ"><span class="tab-ic">📦</span><span class="tab-lb">ສິນຄ້າ</span></button>
+<button data-tab="summary" title="ສະຫຼຸບ"><span class="tab-ic">📊</span><span class="tab-lb">ສະຫຼຸບ</span></button>
+<button data-tab="expenses" title="ລົງບັນຊີ"><span class="tab-ic">📒</span><span class="tab-lb">ລົງບັນຊີ</span></button>
+<button data-tab="dashboard" title="Dashboard"><span class="tab-ic">📈</span><span class="tab-lb">Dashboard</span></button>
+</nav>
 <div class="wrap">
 <div class="sticky-head">
 <header class="top">
@@ -213,14 +231,6 @@ details.inline .sec-body{padding:2px 12px 12px}
 <select id="branchSel"></select>
 </div>
 </header>
-
-<div class="tabs" id="tabs">
-<button class="on" data-tab="pos">🛒 ຂາຍເຄື່ອງ</button>
-<button data-tab="products">📦 ສິນຄ້າ</button>
-<button data-tab="summary">📊 ສະຫຼຸບ</button>
-<button data-tab="expenses">📒 ລົງບັນຊີ</button>
-<button data-tab="dashboard">📈 Dashboard</button>
-</div>
 </div>
 
 <!-- ===== POS ===== -->
@@ -472,6 +482,8 @@ details.inline .sec-body{padding:2px 12px 12px}
 <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:8px" id="sumDayLabel"></div>
 <div style="border-top:1px solid var(--line);margin-top:12px;padding-top:14px">
 <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:10px">📒 ປິດບັນຊີປະຈຳວັນ</div>
+<div id="closeClosedSummary" style="display:none"></div>
+<div id="closeFormArea">
 <div class="grid2">
 <label class="fld">ຮັບເງິນສົດ (ນັບຕົວຈິງ)
 <input type="text" id="closeCash" inputmode="decimal" placeholder="0">
@@ -505,6 +517,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 <div class="hint" id="closeStatus" style="margin:10px 0 0"></div>
 <div class="row" style="margin-top:10px">
 <button class="btn" id="closeDayBtn" style="flex:1">📒 ລົງບັນຊີ</button>
+</div>
 </div>
 </div>
 <div class="grid2" style="margin-top:10px">
@@ -679,7 +692,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 (function(){
 "use strict";
 
-var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null }, dashPeriod: { type: 'today', from: null, to: null }, heldBills: [], resumingHeldBillId: null, paidTodayCount: 0 };
+var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null }, dashPeriod: { type: 'today', from: null, to: null }, heldBills: [], resumingHeldBillId: null, paidTodayCount: 0, closeFormOpenDate: null };
 
 function shopBranches(){ return STATE.branches.filter(function(b){ return b.ShopID === STATE.currentShop; }); }
 function shopProducts(){ return STATE.products.filter(function(p){ return p.ShopID === STATE.currentShop; }); }
@@ -917,6 +930,18 @@ function reloadAll(after){
   run('getBootstrap', [], function(data){ onBoot(data); saveCachedBootstrap(data); if (after) after(); });
 }
 
+/** ຈື່ຊື່ພະນັກງານທີ່ເລືອກລ່າສຸດໄວ້ຢູ່ເຄື່ອງ (ໂທລະສັບ/browser) ນີ້ ເພື່ອບໍ່ຕ້ອງເລືອກຊ້ຳທຸກຄັ້ງທີ່ຂາຍ */
+var SAVED_EMPLOYEE_KEY = 'syposSavedEmployeeV1';
+function loadSavedEmployee(){
+  try {
+    var raw = localStorage.getItem(SAVED_EMPLOYEE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function saveSelectedEmployee(shopId, employeeId){
+  try { localStorage.setItem(SAVED_EMPLOYEE_KEY, JSON.stringify({ shopId: shopId, employeeId: employeeId })); } catch (e) {}
+}
+
 /** ຕອນເປີດແອັບຄັ້ງທຳອິດ: ສະແດງຂໍ້ມູນເກົ່າທີ່ແຄັດໄວ້ (localStorage) ທັນທີ ລະຫວ່າງລໍຖ້າ server ຕອບກັບ ເພື່ອໃຫ້ຮູ້ສຶກໄວຂຶ້ນ ແລ້ວຄ່ອຍອັບເດດເປັນຂໍ້ມູນໃໝ່ເມື່ອມາຮອດ */
 function bootFromCacheThenNetwork(){
   var cached = loadCachedBootstrap();
@@ -1016,6 +1041,7 @@ $('closeDayBtn').addEventListener('click', function(){
   function finishClose(){
     toast('✅ ລົງບັນຊີແລ້ວ');
     $('closeExpAmount').value = ''; $('closeExpNote').value = '';
+    STATE.closeFormOpenDate = null;
     renderSummary();
     renderExpenses();
   }
@@ -1422,6 +1448,12 @@ function renderEmployeeSelect(){
   shopEmployees().slice().sort(function(a, b){ return String(a.Name).localeCompare(String(b.Name)); }).forEach(function(e){
     var o = document.createElement('option'); o.value = e.ID; o.textContent = e.Name; sel.appendChild(o);
   });
+  if (!cur) {
+    var saved = loadSavedEmployee();
+    if (saved && saved.shopId === STATE.currentShop && saved.employeeId && shopEmployees().some(function(e){ return e.ID === saved.employeeId; })) {
+      cur = saved.employeeId;
+    }
+  }
   sel.value = cur;
 }
 
@@ -1454,6 +1486,11 @@ $('addEmployeeBtn').addEventListener('click', function(){
     $('newEmployeeName').value = '';
     reloadAll();
   });
+});
+
+/* ຈື່ຊື່ພະນັກງານທີ່ເລືອກໄວ້ໃນເຄື່ອງນີ້ ເພື່ອຕອນຂາຍເທື່ອຕໍ່ໄປຈະຂຶ້ນຊື່ເກົ່າໃຫ້ອັດຕະໂນມັດ ບໍ່ຕ້ອງເລືອກຊ້ຳ */
+$('saleEmployee').addEventListener('change', function(){
+  saveSelectedEmployee(STATE.currentShop, this.value);
 });
 
 function renderProducts(){
@@ -2016,19 +2053,52 @@ function renderSummary(){
     var dm = map[dayKey] || { cash: 0, transfer: 0, exp: 0 };
 
     var dayClosing = closingByDate[dayKey];
+    var closeFormArea = $('closeFormArea');
+    var closeClosedSummary = $('closeClosedSummary');
     if (dayClosing) {
-      $('closeCash').value = fmt(dayClosing.Cash);
-      $('closeTransfer').value = fmt(dayClosing.Transfer);
       var closedMismatch = (Math.round(Number(dayClosing.Cash)) !== Math.round(dm.cash)) || (Math.round(Number(dayClosing.Transfer)) !== Math.round(dm.transfer));
       if (closedMismatch) {
+        /* ມີຂໍ້ມູນໃໝ່ (ຂາຍ/ຍົກເລີກ) ເກີດຂຶ້ນຫຼັງປິດບັນຊີ — ສະແດງຟອມຄືນເພື່ອໃຫ້ກວດ ແລະລົງບັນຊີຄືນ */
+        $('closeCash').value = fmt(dm.cash);
+        $('closeTransfer').value = fmt(dm.transfer);
         $('closeStatus').innerHTML = '⚠️ ຍອດທີ່ປິດບັນຊີໄວ້ (ຂ້າງເທິງ) ບໍ່ຕົງກັບຍອດຂາຍລ່າສຸດທີ່ລະບົບຄຳນວນໄດ້ຕອນນີ້ (ເງິນສົດ ' + fmt(dm.cash) + ' / ເງິນໂອນ ' + fmt(dm.transfer) + ') — ອາດແມ່ນຍ້ອນຍົກເລີກ/ແກ້ໄຂບິນພາຍຫຼັງປິດບັນຊີແລ້ວ. ກວດຍອດຄືນ ແລ້ວກົດ "ລົງບັນຊີ" ເພື່ອອັບເດດ';
-      } else {
+        closeFormArea.style.display = '';
+        closeClosedSummary.style.display = 'none';
+        closeClosedSummary.innerHTML = '';
+      } else if (STATE.closeFormOpenDate === dayKey) {
+        /* ຜູ້ໃຊ້ກົດ "ແກ້ໄຂ" ເພື່ອເປີດຟອມຄືນເອງ ທັ້ງໆທີ່ຂໍ້ມູນຍັງກົງກັນ */
+        $('closeCash').value = fmt(dayClosing.Cash);
+        $('closeTransfer').value = fmt(dayClosing.Transfer);
         $('closeStatus').innerHTML = '✅ ປິດບັນຊີແລ້ວ ເວລາ ' + (dayClosing.ClosedTime || '') + ' — ກົດ "ລົງບັນຊີ" ອີກຄັ້ງຖ້າຕ້ອງການແກ້ໄຂ';
+        closeFormArea.style.display = '';
+        closeClosedSummary.style.display = 'none';
+        closeClosedSummary.innerHTML = '';
+      } else {
+        /* ປິດບັນຊີແລ້ວ ແລະຂໍ້ມູນຍັງກົງກັນ — ເຊື່ອງຟອມ/ຂໍ້ມູນທີ່ລົງບັນຊີໄປແລ້ວ ຈົນກວ່າຈະມີການຂາຍ/ແກ້ໄຂໃໝ່ເກີດຂຶ້ນ (ຫຼືກົດ "ແກ້ໄຂ" ເພື່ອເປີດຄືນເອງ) */
+        closeFormArea.style.display = 'none';
+        closeClosedSummary.style.display = '';
+        closeClosedSummary.innerHTML = '';
+        var line = document.createElement('div');
+        line.className = 'hint';
+        line.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
+        var txt = document.createElement('span');
+        txt.innerHTML = '✅ ປິດບັນຊີແລ້ວ ເວລາ ' + (dayClosing.ClosedTime || '') + ' · ເງິນສົດ ' + fmt(dayClosing.Cash) + ' · ເງິນໂອນ ' + fmt(dayClosing.Transfer);
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button'; editBtn.className = 'btn ghost sm'; editBtn.textContent = 'ແກ້ໄຂ';
+        editBtn.addEventListener('click', function(){
+          STATE.closeFormOpenDate = dayKey;
+          renderSummary();
+        });
+        line.appendChild(txt); line.appendChild(editBtn);
+        closeClosedSummary.appendChild(line);
       }
     } else {
       $('closeCash').value = fmt(dm.cash);
       $('closeTransfer').value = fmt(dm.transfer);
       $('closeStatus').textContent = 'ຍັງບໍ່ໄດ້ປິດບັນຊີມື້ນີ້';
+      closeFormArea.style.display = '';
+      closeClosedSummary.style.display = 'none';
+      closeClosedSummary.innerHTML = '';
     }
 
     renderSummaryChart(keys, map);
