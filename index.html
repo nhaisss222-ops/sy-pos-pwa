@@ -480,7 +480,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 <input type="text" id="closeTransfer" inputmode="decimal" placeholder="0">
 </label>
 </div>
-<div class="hint" style="margin:14px 0 0;font-weight:700;color:var(--ink)">➖ ລາຍຈ່າຍ (ບໍ່ຈຳເປັນ — ມີກໍໄດ້ ບໍ່ມີກໍໄດ້)</div>
+<div class="hint" style="margin:14px 0 0;font-weight:700;color:var(--ink)">➖ ລາຍຈ່າຍ (ບໍ່ຈຳເປັນ — ກົດ "ບັນທຶກລາຍຈ່າຍ" ໄດ້ຫຼາຍລາຍການກ່ອນຈະລົງບັນຊີ)</div>
 <div class="grid2" style="margin-top:8px">
 <label class="fld">ໝວດລາຍຈ່າຍ
 <select id="closeExpCategory"></select>
@@ -498,6 +498,10 @@ details.inline .sec-body{padding:2px 12px 12px}
 <input type="text" id="closeExpNote" placeholder="ບໍ່ຈຳເປັນ">
 </label>
 </div>
+<div class="row" style="margin-top:10px">
+<button type="button" class="btn ghost" id="closeExpSaveBtn" style="flex:1">➕ ບັນທຶກລາຍຈ່າຍ</button>
+</div>
+<div id="closeExpList"></div>
 <div class="hint" id="closeStatus" style="margin:10px 0 0"></div>
 <div class="row" style="margin-top:10px">
 <button class="btn" id="closeDayBtn" style="flex:1">📒 ລົງບັນຊີ</button>
@@ -975,6 +979,28 @@ $('sumDatePrev').addEventListener('click', function(){
 $('sumDateNext').addEventListener('click', function(){
   $('sumDate').value = shiftDateStr($('sumDate').value, 1);
   renderSummary();
+});
+
+$('closeExpSaveBtn').addEventListener('click', function(){
+  if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
+  var amt = parseAmount($('closeExpAmount').value);
+  if (!amt) { toast('❌ ກະລຸນາປ້ອນຈຳນວນເງິນ'); return; }
+  var dateStr = $('sumDate').value || todayStr();
+  var e = {
+    branchId: STATE.currentBranch,
+    date: dateStr,
+    category: $('closeExpCategory').value,
+    item: $('closeExpNote').value.trim(),
+    amount: amt,
+    paymentType: $('closeExpPayType').value,
+    note: $('closeExpNote').value.trim()
+  };
+  run('addExpense', [e], function(){
+    toast('✅ ບັນທຶກລາຍຈ່າຍແລ້ວ');
+    $('closeExpAmount').value = ''; $('closeExpNote').value = '';
+    renderSummary();
+    renderExpenses();
+  });
 });
 
 $('closeDayBtn').addEventListener('click', function(){
@@ -1877,6 +1903,27 @@ $('periodApplyBtn').addEventListener('click', function(){
   if (periodModalTarget === 'dashboard') { renderDashboard(); } else { renderPeriodCards(); }
 });
 
+/** ລາຍຈ່າຍທີ່ບັນທຶກແລ້ວຂອງວັນທີທີ່ເລືອກ (ສະແດງຢູ່ກ່ອງ "ປິດບັນຊີປະຈຳວັນ" ເພື່ອໃຫ້ເຫັນທຸກລາຍການກ່ອນກົດລົງບັນຊີ, ລຶບໄດ້ຖ້າພິມຜິດ) */
+function renderCloseExpList(dayExpenses){
+  var box = $('closeExpList');
+  if (!dayExpenses || !dayExpenses.length) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="hint" style="margin:10px 0 6px">ລາຍຈ່າຍທີ່ບັນທຶກແລ້ວມື້ນີ້ (' + dayExpenses.length + ' ລາຍການ):</div>';
+  dayExpenses.forEach(function(e){
+    var line = document.createElement('div');
+    line.className = 'held-line';
+    line.innerHTML = '<div class="nm">' + escapeHtml((e.Category ? e.Category + ' · ' : '') + (e.Item || 'ລາຍຈ່າຍ')) + '<div class="meta">' + (e.PaymentType === 'transfer' ? '🏦 ເງິນໂອນ' : '💵 ເງິນສົດ') + '</div></div>' +
+      '<div class="tot" style="color:var(--out)">' + fmt(e.Amount) + '</div>';
+    var delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn'; delBtn.textContent = '🗑️';
+    delBtn.addEventListener('click', function(){
+      if (!window.confirm('ລຶບລາຍຈ່າຍນີ້?')) return;
+      run('deleteExpense', [e.ID], function(){ toast('✅ ລຶບແລ້ວ'); renderSummary(); renderExpenses(); });
+    });
+    line.appendChild(delBtn);
+    box.appendChild(line);
+  });
+}
+
 function renderSummary(){
   $('sumBranchChip').textContent = branchName(STATE.currentBranch);
   renderPeriodCards();
@@ -1940,6 +1987,7 @@ function renderSummary(){
     }
     renderCatTable('sumIncomeCatBody', incomeCat);
     renderCatTable('sumExpenseCatBody', expenseCat);
+    renderCloseExpList(dayExpenses);
 
     var employeeSales = {};
     daySales.forEach(function(s){
