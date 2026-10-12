@@ -675,7 +675,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 (function(){
 "use strict";
 
-var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null }, dashPeriod: { type: 'today', from: null, to: null }, heldBills: [], resumingHeldBillId: null };
+var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null }, dashPeriod: { type: 'today', from: null, to: null }, heldBills: [], resumingHeldBillId: null, paidTodayCount: 0 };
 
 function shopBranches(){ return STATE.branches.filter(function(b){ return b.ShopID === STATE.currentShop; }); }
 function shopProducts(){ return STATE.products.filter(function(p){ return p.ShopID === STATE.currentShop; }); }
@@ -898,8 +898,26 @@ function monthStr(){
   return d.getFullYear() + '-' + mm;
 }
 
+var BOOTSTRAP_CACHE_KEY = 'syposBootstrapCacheV1';
+function loadCachedBootstrap(){
+  try {
+    var raw = localStorage.getItem(BOOTSTRAP_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function saveCachedBootstrap(data){
+  try { localStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+
 function reloadAll(after){
-  run('getBootstrap', [], function(data){ onBoot(data); if (after) after(); });
+  run('getBootstrap', [], function(data){ onBoot(data); saveCachedBootstrap(data); if (after) after(); });
+}
+
+/** ຕອນເປີດແອັບຄັ້ງທຳອິດ: ສະແດງຂໍ້ມູນເກົ່າທີ່ແຄັດໄວ້ (localStorage) ທັນທີ ລະຫວ່າງລໍຖ້າ server ຕອບກັບ ເພື່ອໃຫ້ຮູ້ສຶກໄວຂຶ້ນ ແລ້ວຄ່ອຍອັບເດດເປັນຂໍ້ມູນໃໝ່ເມື່ອມາຮອດ */
+function bootFromCacheThenNetwork(){
+  var cached = loadCachedBootstrap();
+  if (cached) { try { onBoot(cached); } catch (e) {} }
+  reloadAll();
 }
 
 /* ---------- stock lookup ---------- */
@@ -1228,7 +1246,7 @@ $('checkoutBtn').addEventListener('click', function(){
     $('cartModal').classList.remove('show');
     renderCart();
     renderPOS();
-    renderTodaySales();
+    bumpPaidTodayCount(1);
     if (STATE.resumingHeldBillId) {
       var heldId = STATE.resumingHeldBillId;
       STATE.resumingHeldBillId = null;
@@ -1245,8 +1263,14 @@ function renderTodaySales(){
   run('getRecentData', [2], function(data){
     var today = todayStr();
     var rows = data.sales.filter(function(s){ return s.Date === today && s.BranchID === STATE.currentBranch; });
+    STATE.paidTodayCount = rows.length;
     $('paidBillsChip').textContent = '✅ ບິນຈ່າຍແລ້ວ ' + rows.length;
   });
+}
+/** ອັບເດດຕົວນັບ "ບິນຈ່າຍແລ້ວ" ຢູ່ໜ້າຈໍທັນທີ ໂດຍບໍ່ຕ້ອງເອີ້ນ server ຄືນ (ໄວກວ່າ renderTodaySales ທີ່ຕ້ອງດຶງຂໍ້ມູນໃໝ່ທຸກຄັ້ງ) — ໃຊ້ຫຼັງຂາຍ/ຍົກເລີກບິນ */
+function bumpPaidTodayCount(delta){
+  STATE.paidTodayCount = Math.max(0, (STATE.paidTodayCount || 0) + delta);
+  $('paidBillsChip').textContent = '✅ ບິນຈ່າຍແລ້ວ ' + STATE.paidTodayCount;
 }
 
 function openPaidBillsModal(){
@@ -1293,7 +1317,7 @@ function confirmVoid(saleId, branchId, items, after){
     toast('✅ ຍົກເລີກແລ້ວ');
     items.forEach(function(it){ adjustLocalStock(branchId, it.ProductID, Number(it.Qty) || 0); });
     renderPOS();
-    renderTodaySales();
+    bumpPaidTodayCount(-1);
     if (after) after();
   });
 }
@@ -2137,7 +2161,7 @@ function renderDashboardChart(map){
 }
 
 /* ---------- start ---------- */
-reloadAll();
+bootFromCacheThenNetwork();
 })();
 </script>
 <script>
