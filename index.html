@@ -547,7 +547,9 @@ details.inline .sec-body{padding:2px 12px 12px}
 <div class="gauge-row" id="dashGauges"></div>
 <div class="scard net" id="dashNetCard" style="margin-bottom:12px"></div>
 <div id="dashChart" style="margin:14px 0"></div>
-<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">🏷️ ແຍກຕາມໝວດ</div>
+<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">🍰 ສັດສ່ວນລາຍຮັບຕາມໝວດສິນຄ້າ</div>
+<div id="dashCatDonut" style="margin-bottom:16px"></div>
+<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">🏷️ ແຍກຕາມໝວດ (ລາຍຮັບ/ລາຍຈ່າຍ)</div>
 <div class="tbl-scroll">
 <table>
 <thead><tr><th>ໝວດ</th><th style="text-align:right">ລາຍຮັບ</th><th style="text-align:right">ລາຍຈ່າຍ</th></tr></thead>
@@ -2345,6 +2347,7 @@ function renderDashboard(){
       var cat = e.Category || 'ອື່ນໆ';
       expenseCat[cat] = (expenseCat[cat] || 0) + (Number(e.Amount) || 0);
     });
+    renderCategoryDonut(incomeCat);
     var cats = Object.keys(incomeCat).concat(Object.keys(expenseCat)).filter(function(k, i, arr){ return arr.indexOf(k) === i; });
     cats.sort(function(a, b){ return (incomeCat[b] || 0) + (expenseCat[b] || 0) - ((incomeCat[a] || 0) + (expenseCat[a] || 0)); });
     var body = $('dashCatBody');
@@ -2356,6 +2359,59 @@ function renderDashboard(){
     });
     $('dashEmpty').style.display = cats.length ? 'none' : 'block';
   });
+}
+/* ---------- ກຣາບວົງມົນ ສັດສ່ວນລາຍຮັບຕາມໝວດສິນຄ້າ (ອັບເດດຮອບ 8) ---------- */
+var DASH_CAT_COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'];
+var DASH_OTHER_COLOR = '#9a9890';
+function renderCategoryDonut(incomeCat){
+  var box = $('dashCatDonut');
+  var entries = Object.keys(incomeCat).map(function(k){ return { name: k, value: Number(incomeCat[k]) || 0 }; }).filter(function(e){ return e.value > 0; });
+  entries.sort(function(a, b){ return b.value - a.value; });
+  if (!entries.length) { box.innerHTML = '<div class="empty" style="padding:16px 0">ຍັງບໍ່ມີຂໍ້ມູນລາຍຮັບ</div>'; return; }
+  var MAX_SLICES = 7;
+  var slices = entries.slice(0, MAX_SLICES);
+  if (entries.length > MAX_SLICES) {
+    var otherTotal = 0;
+    entries.slice(MAX_SLICES).forEach(function(e){ otherTotal += e.value; });
+    slices.push({ name: 'ອື່ນໆ', value: otherTotal, isOther: true });
+  }
+  var total = 0;
+  slices.forEach(function(s){ total += s.value; });
+  if (total <= 0) { box.innerHTML = '<div class="empty" style="padding:16px 0">ຍັງບໍ່ມີຂໍ້ມູນລາຍຮັບ</div>'; return; }
+
+  var R = 72, CX = 90, CY = 90, STROKE = 28;
+  var circumference = 2 * Math.PI * R;
+  var gapDeg = slices.length > 1 ? 2 : 0;
+  var cursor = -90;
+  var svgParts = [];
+  var legendParts = [];
+  slices.forEach(function(s, i){
+    var color = s.isOther ? DASH_OTHER_COLOR : DASH_CAT_COLORS[i % DASH_CAT_COLORS.length];
+    var pct = s.value / total;
+    var angle = pct * 360;
+    var segAngle = Math.max(angle - gapDeg, 0.001);
+    var dash = (segAngle / 360) * circumference;
+    var gapLen = circumference - dash;
+    svgParts.push('<circle cx="' + CX + '" cy="' + CY + '" r="' + R + '" fill="none" stroke="' + color + '" stroke-width="' + STROKE + '" stroke-dasharray="' + dash.toFixed(2) + ' ' + gapLen.toFixed(2) + '" transform="rotate(' + cursor.toFixed(2) + ' ' + CX + ' ' + CY + ')"><title>' + escapeHtml(s.name) + ': ' + fmt(s.value) + ' ກີບ (' + (pct * 100).toFixed(1) + '%)</title></circle>');
+    cursor += angle;
+    legendParts.push(
+      '<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--line)">' +
+        '<span style="width:11px;height:11px;border-radius:3px;background:' + color + ';flex:none"></span>' +
+        '<span style="flex:1;font-size:12.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(s.name) + '</span>' +
+        '<span style="font-size:12px;color:var(--muted);flex:none">' + (pct * 100).toFixed(1) + '%</span>' +
+        '<span style="font-size:12.5px;font-weight:700;color:var(--ink);flex:none;min-width:70px;text-align:right">' + fmt(s.value) + '</span>' +
+      '</div>'
+    );
+  });
+  var svg = '<svg viewBox="0 0 180 180" width="180" height="180" style="display:block">' +
+    svgParts.join('') +
+    '<text x="90" y="86" text-anchor="middle" font-size="11" fill="var(--muted)">ລາຍຮັບລວມ</text>' +
+    '<text x="90" y="104" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">' + fmt(total) + '</text>' +
+    '</svg>';
+  box.innerHTML = '<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;justify-content:center">' +
+    '<div style="flex:none">' + svg + '</div>' +
+    '<div style="flex:1;min-width:200px">' + legendParts.join('') + '</div>' +
+  '</div>';
 }
 function renderDashboardChart(map){
   var box = $('dashChart');
