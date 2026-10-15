@@ -378,6 +378,27 @@ function adjustStockIfTracked_(sheet, branchId, productId, delta) {
   sheet.getRange(row, 3).setValue(cur + delta);
 }
 
+/** ອ່ານ Stock sheet ຄັ້ງດຽວ ສ້າງເປັນ map (branchId|productId -> {row, qty}) — ໃຊ້ສຳລັບປັບສະຕັອກຫຼາຍລາຍການໃນການຮ້ອງຂໍດຽວ (ເຊັ່ນ ຫຼາຍລາຍການສິນຄ້າໃນ 1 ບິນ) ເພື່ອບໍ່ໃຫ້ອ່ານທັງຊີດຊ້ຳໆຕໍ່ 1 ລາຍການ (ໄວຂຶ້ນຫຼາຍເມື່ອມີຫຼາຍລາຍການ) */
+function loadStockMap_(sheet) {
+  var vals = sheet.getDataRange().getValues();
+  var map = {};
+  for (var i = 1; i < vals.length; i++) {
+    if (vals[i][0] === '' && vals[i][1] === '') continue;
+    var key = String(vals[i][0]) + '|' + String(vals[i][1]);
+    map[key] = { row: i + 1, qty: Number(vals[i][2]) || 0 };
+  }
+  return map;
+}
+
+/** ປັບສະຕັອກຈາກ map ທີ່ອ່ານໄວ້ລ່ວງໜ້າ (loadStockMap_) — ບໍ່ອ່ານຊີດຊ້ຳ, ຂ້າມຖ້າສິນຄ້ານັ້ນບໍ່ໄດ້ຕິດຕາມສະຕັອກ (ບໍ່ມີແຖວ) */
+function applyStockDeltaIfTracked_(sheet, stockMap, branchId, productId, delta) {
+  var key = String(branchId) + '|' + String(productId);
+  var entry = stockMap[key];
+  if (!entry) return;
+  entry.qty += delta;
+  sheet.getRange(entry.row, 3).setValue(entry.qty);
+}
+
 /** ບັນທຶກການເພີ່ມສະຕັອກ (ມີວັນທີ) — ໃຊ້ຕອນເພີ່ມສິນຄ້າໃໝ່ (ສະຕັອກເລີ່ມຕົ້ນ) ຫຼື ຕື່ມສະຕັອກສິນຄ້າເກົ່າ */
 function addStockIn(payload) {
   if (!payload || !payload.branchId) throw new Error('ກະລຸນາເລືອກສາຂາ');
@@ -438,8 +459,9 @@ function recordSale(sale) {
   saleSheet.appendRow([id, new Date(), sale.branchId, sale.paymentType, total, sale.note || '', sale.employeeId || '', cashAmount, transferAmount, discount]);
   itemSheet.getRange(itemSheet.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
 
+  var stockMap = loadStockMap_(stockSheet);
   for (var k = 0; k < rows.length; k++) {
-    adjustStockIfTracked_(stockSheet, sale.branchId, rows[k][1], -(Number(rows[k][3]) || 0));
+    applyStockDeltaIfTracked_(stockSheet, stockMap, sale.branchId, rows[k][1], -(Number(rows[k][3]) || 0));
   }
 
   return { id: id, total: total, subtotal: subtotal, discount: discount };
@@ -456,9 +478,10 @@ function voidSale(saleId) {
 
   var itemVals = itemSheet.getDataRange().getValues();
   var rowsToDelete = [];
+  var stockMap = loadStockMap_(stockSheet);
   for (var i = 1; i < itemVals.length; i++) {
     if (String(itemVals[i][0]) === String(saleId)) {
-      adjustStockIfTracked_(stockSheet, branchId, itemVals[i][1], Number(itemVals[i][3]) || 0);
+      applyStockDeltaIfTracked_(stockSheet, stockMap, branchId, itemVals[i][1], Number(itemVals[i][3]) || 0);
       rowsToDelete.push(i + 1);
     }
   }
