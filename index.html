@@ -1020,6 +1020,7 @@ function bootFromCacheThenNetwork(){
 }
 
 /* ---------- stock lookup ---------- */
+/* ປັບປຸງ stock ສະເພາະສິນຄ້າທີ່ມີການນັບສະຕັອກ (ມີແຖວໃນ STATE.stock) ຢູ່ແລ້ວເທົ່ານັ້ນ, ບໍ່ສ້າງແຖວໃໝ່ຂຶ້ນມາເອງ */
 function adjustLocalStock(branchId, productId, delta){
   for (var i = 0; i < STATE.stock.length; i++) {
     if (STATE.stock[i].ProductID === productId && STATE.stock[i].BranchID === branchId) {
@@ -1027,7 +1028,14 @@ function adjustLocalStock(branchId, productId, delta){
       return;
     }
   }
-  STATE.stock.push({ ProductID: productId, BranchID: branchId, Qty: delta });
+}
+
+/* ສິນຄ້ານີ້ມີການນັບສະຕັອກ (ມີແຖວ Stock) ຢູ່ບໍ່ - ໃຊ້ຕັດສິນວ່າຈະສະແດງ badge ສະຕັອກຫຼືບໍ່ */
+function hasStockRow(productId, branchId){
+  for (var i = 0; i < STATE.stock.length; i++) {
+    if (STATE.stock[i].ProductID === productId && STATE.stock[i].BranchID === branchId) return true;
+  }
+  return false;
 }
 
 function stockQty(productId, branchId){
@@ -1109,7 +1117,7 @@ $('closeDayBtn').addEventListener('click', function(){
   };
   var expAmount = parseAmount($('closeExpAmount').value);
   function finishClose(){
-    toast('✅ ລົງບັນຊີແລ້ວ');
+    toast('✅ ລebbງບັນຊີແລ້ວ');
     $('closeExpAmount').value = ''; $('closeExpNote').value = '';
     STATE.closeFormOpenDate = null;
     renderSummary();
@@ -1142,15 +1150,16 @@ function renderPOS(){
     if (STATE.catFilter && p.Category !== STATE.catFilter) return;
     if (q && String(p.Name || '').toLowerCase().indexOf(q) < 0) return;
     shown++;
+    var tracked = hasStockRow(p.ID, STATE.currentBranch);
     var qty = stockQty(p.ID, STATE.currentBranch);
     var card = document.createElement('button');
     card.type = 'button';
     var hasImg = !!p.Image;
     card.className = 'pcard' + (hasImg ? '' : ' noimg');
-    var low = Number(p.MinStock) > 0 && qty <= Number(p.MinStock);
+    var low = tracked && Number(p.MinStock) > 0 && qty <= Number(p.MinStock);
     var thumb = hasImg ? '<img class="thumb" src="' + p.Image + '">' : '';
-    card.innerHTML = thumb +
-      '<div class="st' + (low ? ' low' : '') + '">' + fmt(qty) + (p.Unit ? (' ' + escapeHtml(p.Unit)) : '') + '</div>' +
+    var stockBadge = tracked ? ('<div class="st' + (low ? ' low' : '') + '">' + fmt(qty) + (p.Unit ? (' ' + escapeHtml(p.Unit)) : '') + '</div>') : '';
+    card.innerHTML = thumb + stockBadge +
       '<div class="info"><div class="nm">' + escapeHtml(p.Name) + '</div>' +
       '<div class="pr">' + fmt(p.Price) + ' ກີບ</div></div>';
     card.addEventListener('click', function(){ addToCart(p); });
