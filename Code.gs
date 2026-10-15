@@ -335,8 +335,7 @@ function setProductActive(id, active) {
   var sheet = sh_(SH_PRODUCT, HEAD_PRODUCT);
   var row = findRowIndex_(sheet, 0, id);
   if (row < 0) throw new Error('ບໍ່ພົບສິນຄ້າ');
-  sheet.getRange(row, 8).setValue(active ? 'Y' : 'N');
-  return true;
+  sheet.getRange(row, 8).setValue(active ? 'Y' : 'N');  return true;
 }
 
 /* ---------- stock (ແຍກຕາມສາຂາ) ---------- */
@@ -368,6 +367,14 @@ function adjustStock_(sheet, branchId, productId, delta) {
     var cur = Number(sheet.getRange(row, 3).getValue()) || 0;
     sheet.getRange(row, 3).setValue(cur + delta);
   }
+}
+
+/** ປັບສະຕັອກສະເພາະສິນຄ້າທີ່ມີການນັບສະຕັອກ (ມີແຖວ Stock) ຢູ່ແລ້ວເທົ່ານັ້ນ — ຖ້າບໍ່ມີແຖວ (ບໍ່ໄດ້ຕັ້ງສະຕັອກເລີ່ມຕົ້ນໄວ້) ແມ່ນບໍ່ນັບ, ຂ້າມໄປ ບໍ່ສ້າງແຖວໃໝ່ */
+function adjustStockIfTracked_(sheet, branchId, productId, delta) {
+  var row = getStockRow_(sheet, branchId, productId);
+  if (row < 0) return;
+  var cur = Number(sheet.getRange(row, 3).getValue()) || 0;
+  sheet.getRange(row, 3).setValue(cur + delta);
 }
 
 /** ບັນທຶກການເພີ່ມສະຕັອກ (ມີວັນທີ) — ໃຊ້ຕອນເພີ່ມສິນຄ້າໃໝ່ (ສະຕັອກເລີ່ມຕົ້ນ) ຫຼື ຕື່ມສະຕັອກສິນຄ້າເກົ່າ */
@@ -431,7 +438,7 @@ function recordSale(sale) {
   itemSheet.getRange(itemSheet.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
 
   for (var k = 0; k < rows.length; k++) {
-    adjustStock_(stockSheet, sale.branchId, rows[k][1], -(Number(rows[k][3]) || 0));
+    adjustStockIfTracked_(stockSheet, sale.branchId, rows[k][1], -(Number(rows[k][3]) || 0));
   }
 
   return { id: id, total: total, subtotal: subtotal, discount: discount };
@@ -450,7 +457,7 @@ function voidSale(saleId) {
   var rowsToDelete = [];
   for (var i = 1; i < itemVals.length; i++) {
     if (String(itemVals[i][0]) === String(saleId)) {
-      adjustStock_(stockSheet, branchId, itemVals[i][1], Number(itemVals[i][3]) || 0);
+      adjustStockIfTracked_(stockSheet, branchId, itemVals[i][1], Number(itemVals[i][3]) || 0);
       rowsToDelete.push(i + 1);
     }
   }
