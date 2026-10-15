@@ -540,8 +540,12 @@ details.inline .sec-body{padding:2px 12px 12px}
 <section class="view" id="view-dashboard">
 <div class="card">
 <h2>📈 Dashboard ລົງບັນຊີ <span class="chip" id="dashBranchChip" style="cursor:default"></span></h2>
-<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
-<div style="font-size:13.5px;font-weight:700;color:var(--ink)" id="dashPeriodLabel"></div>
+<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px">
+<div class="row" style="align-items:center;gap:6px;flex:1;min-width:0">
+<button type="button" class="btn ghost sm" id="dashMonthPrevBtn" title="ເດືອນກ່ອນ" style="display:none;padding:7px 10px;flex:none">◀</button>
+<div style="font-size:13.5px;font-weight:700;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="dashPeriodLabel"></div>
+<button type="button" class="btn ghost sm" id="dashMonthNextBtn" title="ເດືອນຕໍ່ໄປ" style="display:none;padding:7px 10px;flex:none">▶</button>
+</div>
 <button type="button" class="btn ghost" id="dashPeriodBtn" style="padding:8px 14px;flex:0 0 auto">🗓️ ເລືອກໄລຍະເວລາ</button>
 </div>
 <div class="gauge-row" id="dashGauges"></div>
@@ -1968,6 +1972,37 @@ function periodRange(type){
 function periodTypeLabel(type){
   return { today: 'ມື້ນີ້', week: 'ອາທິດນີ້', month: 'ເດືອນນີ້', year: 'ປີນີ້', custom: 'ກຳນົດເອງ' }[type] || type;
 }
+/* ---------- ເລື່ອນໄລຍະເວລາເປັນເດືອນ (ສຳລັບ Dashboard, ອັບເດດຮອບ 9) ---------- */
+function monthKeyOf(dateStr){
+  var p = (dateStr || todayStr()).split('-');
+  return { y: Number(p[0]), m: Number(p[1]) };
+}
+function monthRangeFor(y, m){
+  var mm = String(m); if (mm.length < 2) mm = '0' + mm;
+  var from = y + '-' + mm + '-01';
+  var todayP = todayStr().split('-');
+  var isCurrent = (y === Number(todayP[0]) && m === Number(todayP[1]));
+  var to;
+  if (isCurrent) {
+    to = todayStr();
+  } else {
+    var lastDay = new Date(y, m, 0).getDate();
+    var dd = String(lastDay); if (dd.length < 2) dd = '0' + dd;
+    to = y + '-' + mm + '-' + dd;
+  }
+  return { from: from, to: to };
+}
+function shiftDashMonth(delta){
+  var mk = monthKeyOf(STATE.dashPeriod.from);
+  var total = mk.y * 12 + (mk.m - 1) + delta;
+  var y = Math.floor(total / 12), m = (total % 12) + 1;
+  var todayP = todayStr().split('-');
+  var curY = Number(todayP[0]), curM = Number(todayP[1]);
+  if (y > curY || (y === curY && m > curM)) return; /* ຫ້າມເລື່ອນໄປເດືອນໃນອະນາຄົດ */
+  var range = monthRangeFor(y, m);
+  STATE.dashPeriod = { type: 'month', from: range.from, to: range.to };
+  renderDashboard();
+}
 
 function renderPeriodCards(){
   if (!STATE.sumPeriod || !STATE.sumPeriod.from) {
@@ -2021,6 +2056,8 @@ function openPeriodModal(target){
 }
 $('sumPeriodBtn').addEventListener('click', function(){ openPeriodModal('summary'); });
 $('dashPeriodBtn').addEventListener('click', function(){ openPeriodModal('dashboard'); });
+$('dashMonthPrevBtn').addEventListener('click', function(){ shiftDashMonth(-1); });
+$('dashMonthNextBtn').addEventListener('click', function(){ shiftDashMonth(1); });
 $('periodCancelBtn').addEventListener('click', function(){ $('periodModal').classList.remove('show'); });
 document.querySelectorAll('input[name="periodOpt"]').forEach(function(r){
   r.addEventListener('change', function(){
@@ -2306,7 +2343,21 @@ function renderDashboard(){
   }
   var period = STATE.dashPeriod;
   var rangeLabel = (period.from === period.to) ? fmtDateLao(period.from) : (fmtDateLao(period.from) + ' - ' + fmtDateLao(period.to));
-  $('dashPeriodLabel').textContent = '📈 ' + periodTypeLabel(period.type) + ' (' + rangeLabel + ')';
+  var periodTitle = periodTypeLabel(period.type);
+  var isMonthPeriod = period.type === 'month';
+  if (isMonthPeriod) {
+    var mk0 = monthKeyOf(period.from);
+    periodTitle = 'ເດືອນ' + (LAO_MONTH_NAMES[mk0.m - 1] || mk0.m) + ' ' + mk0.y;
+  }
+  $('dashPeriodLabel').textContent = '📈 ' + periodTitle + ' (' + rangeLabel + ')';
+  $('dashMonthPrevBtn').style.display = isMonthPeriod ? 'inline-block' : 'none';
+  $('dashMonthNextBtn').style.display = isMonthPeriod ? 'inline-block' : 'none';
+  if (isMonthPeriod) {
+    var mk1 = monthKeyOf(period.from);
+    var todayP1 = todayStr().split('-');
+    var isCurMonth = (mk1.y === Number(todayP1[0]) && mk1.m === Number(todayP1[1]));
+    $('dashMonthNextBtn').disabled = isCurMonth;
+  }
   var prev = previousPeriodRange(period.from, period.to);
   var earliest = prev.from < period.from ? prev.from : period.from;
   var days = Math.max(2, daysBetweenStr(earliest, todayStr()) + 2);
