@@ -335,7 +335,8 @@ function setProductActive(id, active) {
   var sheet = sh_(SH_PRODUCT, HEAD_PRODUCT);
   var row = findRowIndex_(sheet, 0, id);
   if (row < 0) throw new Error('ບໍ່ພົບສິນຄ້າ');
-  sheet.getRange(row, 8).setValue(active ? 'Y' : 'N');  return true;
+  sheet.getRange(row, 8).setValue(active ? 'Y' : 'N');
+  return true;
 }
 
 /* ---------- stock (ແຍກຕາມສາຂາ) ---------- */
