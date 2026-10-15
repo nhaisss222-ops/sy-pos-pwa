@@ -817,6 +817,21 @@ function run(fnName, args, onOk, onFail){
     });
 }
 
+/* ---------- cache ຊົ່ວຄາວສຳລັບ getRecentData/getMonthData (ແກ້ "ແອັບຊ້າຕອນສະຫຼັບໜ້າ" — ໜ້າ ສະຫຼຸບ/ລົງບັນຊີ/Dashboard ເຄີຍເອີ້ນ server ໃໝ່ທຸກຄັ້ງທີ່ສະຫຼັບໄປມາ ທັງໆທີ່ຂໍ້ມູນບໍ່ປ່ຽນ) ---------- */
+var DATA_CACHE_ = {};
+var DATA_CACHE_TTL_MS = 20000;
+function runCached(fnName, args, onOk, onFail){
+  var key = fnName + ':' + JSON.stringify(args || []);
+  var hit = DATA_CACHE_[key];
+  if (hit && (Date.now() - hit.ts) < DATA_CACHE_TTL_MS) { onOk(hit.data); return; }
+  run(fnName, args, function(data){
+    DATA_CACHE_[key] = { data: data, ts: Date.now() };
+    onOk(data);
+  }, onFail);
+}
+/** ລຶບ cache ທັງໝົດ — ເອີ້ນທຸກຄັ້ງຫຼັງມີການຂາຍ/ຍົກເລີກບິນ/ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ/ລົງບັນຊີ ເພື່ອໃຫ້ຂໍ້ມູນຮອບຕໍ່ໄປສົດສະເໝີ */
+function invalidateDataCache(){ DATA_CACHE_ = {}; }
+
 /* ---------- tabs (ເຊື່ອງໄວ້ເປັນ drawer — ກົດປຸ່ມ ☰ ຈຶ່ງເລື່ອນອອກມາໃຫ້ເລືອກ) ---------- */
 function openTabsNav(){
   $('tabs').classList.add('open');
@@ -1099,6 +1114,7 @@ $('closeExpSaveBtn').addEventListener('click', function(){
     note: $('closeExpNote').value.trim()
   };
   run('addExpense', [e], function(){
+    invalidateDataCache();
     toast('✅ ບັນທຶກລາຍຈ່າຍແລ້ວ');
     $('closeExpAmount').value = ''; $('closeExpNote').value = '';
     renderSummary();
@@ -1117,6 +1133,7 @@ $('closeDayBtn').addEventListener('click', function(){
   };
   var expAmount = parseAmount($('closeExpAmount').value);
   function finishClose(){
+    invalidateDataCache();
     toast('✅ ລົງບັນຊີແລ້ວ');
     $('closeExpAmount').value = ''; $('closeExpNote').value = '';
     STATE.closeFormOpenDate = null;
@@ -1403,6 +1420,7 @@ $('checkoutBtn').addEventListener('click', function(){
     sale.transferAmount = transferAmt;
   }
   run('recordSale', [sale], function(res){
+    invalidateDataCache();
     toast('✅ ຂາຍສຳເລັດ ' + fmt(res.total) + ' ກີບ');
     items.forEach(function(it){ adjustLocalStock(STATE.currentBranch, it.productId, -it.qty); });
     STATE.cart = [];
@@ -1428,7 +1446,7 @@ function payIconFor(s){
   return s.PaymentType === 'cash' ? '💵' : (s.PaymentType === 'transfer' ? '🏦' : '🔀');
 }
 function renderTodaySales(){
-  run('getRecentData', [2], function(data){
+  runCached('getRecentData', [2], function(data){
     var today = todayStr();
     var rows = data.sales.filter(function(s){ return s.Date === today && s.BranchID === STATE.currentBranch; });
     STATE.paidTodayCount = rows.length;
@@ -1442,7 +1460,7 @@ function bumpPaidTodayCount(delta){
 }
 
 function openPaidBillsModal(){
-  run('getRecentData', [2], function(data){
+  runCached('getRecentData', [2], function(data){
     var today = todayStr();
     var rows = data.sales.filter(function(s){ return s.Date === today && s.BranchID === STATE.currentBranch; });
     rows.sort(function(a, b){ return a.Time < b.Time ? 1 : -1; });
@@ -1482,6 +1500,7 @@ function renderPaidBillsModal(rows, itemsBySale){
 function confirmVoid(saleId, branchId, items, after){
   if (!window.confirm('ຍົກເລີກລາຍການຂາຍນີ້ (ສະຕັອກຈະຄືນ)?')) return;
   run('voidSale', [saleId], function(){
+    invalidateDataCache();
     toast('✅ ຍົກເລີກແລ້ວ');
     items.forEach(function(it){ adjustLocalStock(branchId, it.ProductID, Number(it.Qty) || 0); });
     renderPOS();
@@ -1838,6 +1857,7 @@ $('incForm').addEventListener('submit', function(ev){
   };
   if (!e.amount) { toast('❌ ກະລຸນາປ້ອນຈຳນວນເງິນ'); return; }
   run('addIncome', [e], function(){
+    invalidateDataCache();
     toast('✅ ບັນທຶກລາຍຮັບແລ້ວ');
     $('iItem').value = ''; $('iAmount').value = ''; $('iNote').value = '';
     renderExpenses();
@@ -1858,6 +1878,7 @@ $('expForm').addEventListener('submit', function(ev){
   };
   if (!e.amount) { toast('❌ ກະລຸນາປ້ອນຈຳນວນເງິນ'); return; }
   run('addExpense', [e], function(){
+    invalidateDataCache();
     toast('✅ ບັນທຶກລາຍຈ່າຍແລ້ວ');
     $('eItem').value = ''; $('eAmount').value = ''; $('eNote').value = '';
     renderExpenses();
@@ -1865,7 +1886,7 @@ $('expForm').addEventListener('submit', function(ev){
 });
 
 function renderExpenses(){
-  run('getRecentData', [60], function(data){
+  runCached('getRecentData', [60], function(data){
     var itemsBySale = {};
     data.items.forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
 
@@ -1923,7 +1944,7 @@ function renderExpenses(){
         incBtn.addEventListener('click', function(ev){
           ev.stopPropagation();
           if (!window.confirm('ລຶບລາຍຮັບນີ້?')) return;
-          run('deleteIncome', [r.income.ID], function(){ toast('✅ ລຶບແລ້ວ'); renderExpenses(); });
+          run('deleteIncome', [r.income.ID], function(){ invalidateDataCache(); toast('✅ ລຶບແລ້ວ'); renderExpenses(); });
         });
         td.appendChild(incBtn);
       } else {
@@ -1932,7 +1953,7 @@ function renderExpenses(){
         expBtn.addEventListener('click', function(ev){
           ev.stopPropagation();
           if (!window.confirm('ລຶບລາຍຈ່າຍນີ້?')) return;
-          run('deleteExpense', [r.expense.ID], function(){ toast('✅ ລຶບແລ້ວ'); renderExpenses(); });
+          run('deleteExpense', [r.expense.ID], function(){ invalidateDataCache(); toast('✅ ລຶບແລ້ວ'); renderExpenses(); });
         });
         td.appendChild(expBtn);
       }
@@ -1995,7 +2016,7 @@ function renderPeriodCards(){
   var rangeLabel = (period.from === period.to) ? fmtDateLao(period.from) : (fmtDateLao(period.from) + ' - ' + fmtDateLao(period.to));
   $('sumPeriodLabel').textContent = '📊 ' + periodTypeLabel(period.type) + ' (' + rangeLabel + ')';
   var days = Math.max(2, daysBetweenStr(period.from, todayStr()) + 2);
-  run('getRecentData', [days], function(data){
+  runCached('getRecentData', [days], function(data){
     var inRange = function(dstr){ return dstr >= period.from && dstr <= period.to; };
     var sales = (data.sales || []).filter(function(s){ return s.BranchID === STATE.currentBranch && inRange(s.Date); });
     var expenses = (data.expenses || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
@@ -2076,7 +2097,7 @@ function renderCloseExpList(dayExpenses){
     delBtn.className = 'icon-btn'; delBtn.textContent = '🗑️';
     delBtn.addEventListener('click', function(){
       if (!window.confirm('ລຶບລາຍຈ່າຍນີ້?')) return;
-      run('deleteExpense', [e.ID], function(){ toast('✅ ລຶບແລ້ວ'); renderSummary(); renderExpenses(); });
+      run('deleteExpense', [e.ID], function(){ invalidateDataCache(); toast('✅ ລຶບແລ້ວ'); renderSummary(); renderExpenses(); });
     });
     line.appendChild(delBtn);
     box.appendChild(line);
@@ -2092,7 +2113,7 @@ function renderSummary(){
   var year = Number(parts[0]), month = Number(parts[1]);
   $('sumDayLabel').textContent = '📅 ສະຫຼຸບວັນທີ ' + fmtDateLao(dayKey);
   $('sumMonthLabel').textContent = '📊 ປະຫວັດແຕ່ລະມື້ — ເດືອນ ' + (LAO_MONTH_NAMES[month - 1] || month) + ' ' + year + ' (ກົດເລືອກວັນທີອື່ນຢູ່ເທິງເພື່ອເບິ່ງສະຫຼຸບມື້ນັ້ນ)';
-  run('getMonthData', [year, month], function(data){
+  runCached('getMonthData', [year, month], function(data){
     var sales = data.sales.filter(function(s){ return s.BranchID === STATE.currentBranch; });
     var expenses = data.expenses.filter(function(e){ return e.BranchID === STATE.currentBranch; });
     var incomes = (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch; });
@@ -2327,7 +2348,7 @@ function renderDashboard(){
   var prev = previousPeriodRange(period.from, period.to);
   var earliest = prev.from < period.from ? prev.from : period.from;
   var days = Math.max(2, daysBetweenStr(earliest, todayStr()) + 2);
-  run('getRecentData', [days], function(data){
+  runCached('getRecentData', [days], function(data){
     var cur = ledgerTotals(data, period.from, period.to);
     var prevT = ledgerTotals(data, prev.from, prev.to);
     var maxVal = Math.max(cur.income, cur.expense, 1);
