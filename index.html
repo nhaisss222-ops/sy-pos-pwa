@@ -127,6 +127,23 @@ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 .pay-opt.on{border-color:var(--accent);background:var(--accent-soft);font-weight:700;color:var(--accent)}
 .split-fields{display:none;gap:8px;margin:-6px 0 12px}
 .split-fields.show{display:grid;grid-template-columns:1fr 1fr}
+/* ໜ້າກະຕ່າ: ໂຕໜັງສືໃຫຍ່ ອ່ານງ່າຍ ເຕັມຈໍ */
+#cartModal .box{max-width:640px;max-height:94vh;padding:20px 18px 24px;font-size:17px}
+#cartModal h3{font-size:20px;margin-bottom:12px}
+#cartModal .cart-line{padding:12px 0;gap:10px}
+#cartModal .cart-line .nm{font-size:17px;font-weight:600}
+#cartModal .cart-line .pr{font-size:14.5px;font-weight:400;margin-top:2px}
+#cartModal .qtybox{gap:8px}
+#cartModal .qtybox button{width:40px;height:40px;font-size:20px;border-radius:10px}
+#cartModal .qtybox span{min-width:28px;font-size:18px}
+#cartModal .icon-btn{font-size:18px;padding:6px 8px}
+#cartModal .row span{font-size:17px}
+#cartModal .tot{font-size:20px;font-weight:700;color:var(--accent)}
+#cartModal #modalTotal{font-size:24px;font-weight:800}
+#cartModal .fld{font-size:15px}
+#cartModal input,#cartModal select{font-size:17px;padding:12px}
+#cartModal .pay-opt{font-size:16px;padding:14px 4px}
+#cartModal .btn{font-size:17px;padding:14px 16px}
 
 /* tables */
 .tbl-scroll{overflow-x:auto}
@@ -213,10 +230,11 @@ details.inline .sec-body{padding:2px 12px 12px}
 .pw-wrap{position:relative}
 .pw-wrap input{padding-right:46px}
 .pw-wrap button{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;font-size:16px;padding:8px}
-.user-pick{display:flex;align-items:center;gap:6px;font-size:13px}
+.user-pick{display:flex;align-items:center;gap:6px;font-size:13px;flex:1 1 100%}
 .user-pick .who{background:rgba(255,255,255,.16);padding:7px 10px;border-radius:10px;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
 .user-pick button{border:none;border-radius:10px;padding:7px 10px;background:rgba(255,255,255,.16);color:#fff;cursor:pointer;font-family:inherit;font-size:13px}
 .user-pick button:hover{background:rgba(255,255,255,.26)}
+#logoutBtn{margin-left:auto}
 .role-tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:600}
 .role-tag.staff{background:#eef2f0;color:var(--muted)}
 .role-tag.off{background:#fdece4;color:#9a3412}
@@ -224,6 +242,7 @@ body.role-staff .owner-only{display:none !important}
 body:not(.role-admin) .admin-only{display:none !important}
 @media (max-width:600px){
 .wrap{padding:12px}
+.branch-pick{width:100%}
 .grid2{grid-template-columns:1fr}
 }
 </style>
@@ -255,6 +274,7 @@ body:not(.role-admin) .admin-only{display:none !important}
 <div class="user-pick">
 <span class="who" id="userChip"></span>
 <button type="button" id="changePwBtn" title="ປ່ຽນລະຫັດຜ່ານ">🔑</button>
+<button type="button" id="settingsBtn" class="owner-only" title="ຕັ້ງຄ່າຮ້ານ, ສາຂາ & ບັນຊີ">⚙️</button>
 <button type="button" id="logoutBtn">ອອກ</button>
 </div>
 </div>
@@ -655,7 +675,7 @@ body:not(.role-admin) .admin-only{display:none !important}
 <span style="font-weight:700">ລວມທັງໝົດ</span>
 <span class="tot" id="modalTotal">0 ກີບ</span>
 </div>
-<div style="font-size:12.5px;color:var(--muted);margin-top:10px">ປະເພດການຮັບເງິນ</div>
+<div style="font-size:15px;color:var(--muted);margin-top:12px">ປະເພດການຮັບເງິນ</div>
 <div class="pay-grid">
 <div class="pay-opt on" id="payCash" data-v="cash">💵 ເງິນສົດ</div>
 <div class="pay-opt" id="payTransfer" data-v="transfer">🏦 ເງິນໂອນ</div>
@@ -2639,6 +2659,14 @@ $('logoutBtn').addEventListener('click', function(){
   fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'logout', args: [], token: token }) }).catch(function(){});
   endSession();
   location.reload();
+});
+
+$('settingsBtn').addEventListener('click', function(){
+  document.querySelector('#tabs button[data-tab="products"]').click();
+  showProductsSubView('list');
+  var sec = $('settingsSec');
+  if (!sec.open) sec.open = true;
+  setTimeout(function(){ sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
 });
 
 $('changePwBtn').addEventListener('click', function(){
