@@ -197,6 +197,31 @@ details.inline summary::-webkit-details-marker{display:none}
 details.inline summary::after{content:'▸';font-size:11px}
 details.inline[open] summary::after{content:'▾'}
 details.inline .sec-body{padding:2px 12px 12px}
+/* ---------- ລັອກອິນ & ສິດ ---------- */
+.login-screen{position:fixed;inset:0;z-index:90;background:linear-gradient(160deg,#0f7a5a,#0b5f47 55%,#083f30);display:none;align-items:center;justify-content:center;padding:16px;overflow:auto}
+.login-screen.show{display:flex}
+.login-box{background:var(--card);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.28);padding:26px 22px 22px;width:100%;max-width:380px}
+.login-box .brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.login-box .brand img{width:46px;height:46px;border-radius:12px}
+.login-box h2{margin:0;font-size:19px}
+.login-box .sub{font-size:13px;color:var(--muted);margin-top:2px}
+.login-box label{display:block;font-size:13px;font-weight:600;margin:12px 0 5px}
+.login-box input{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}
+.login-box .btn{width:100%;margin-top:18px;padding:13px}
+.login-err{display:none;margin-top:12px;padding:9px 11px;border-radius:9px;background:#fdece4;color:#9a3412;font-size:13.5px}
+.login-err.show{display:block}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:46px}
+.pw-wrap button{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;font-size:16px;padding:8px}
+.user-pick{display:flex;align-items:center;gap:6px;font-size:13px}
+.user-pick .who{background:rgba(255,255,255,.16);padding:7px 10px;border-radius:10px;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.user-pick button{border:none;border-radius:10px;padding:7px 10px;background:rgba(255,255,255,.16);color:#fff;cursor:pointer;font-family:inherit;font-size:13px}
+.user-pick button:hover{background:rgba(255,255,255,.26)}
+.role-tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.role-tag.staff{background:#eef2f0;color:var(--muted)}
+.role-tag.off{background:#fdece4;color:#9a3412}
+body.role-staff .owner-only{display:none !important}
+body:not(.role-admin) .admin-only{display:none !important}
 @media (max-width:600px){
 .wrap{padding:12px}
 .grid2{grid-template-columns:1fr}
@@ -204,20 +229,41 @@ details.inline .sec-body{padding:2px 12px 12px}
 </style>
 </head>
 <body>
+<div class="login-screen" id="loginScreen">
+<form class="login-box" id="loginForm" autocomplete="on">
+<div class="brand"><img src="icon-192.png" alt=""><div><h2 id="loginTitle">ເຂົ້າສູ່ລະບົບ</h2><div class="sub" id="loginSub">ລະບົບ POS ຂາຍເຄື່ອງ</div></div></div>
+<div id="setupNameRow" style="display:none">
+<label for="loginName">ຊື່ຂອງທ່ານ</label>
+<input type="text" id="loginName" placeholder="ເຊັ່ນ: ໄຫ່">
+</div>
+<label for="loginUser">ຊື່ຜູ້ໃຊ້</label>
+<input type="text" id="loginUser" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="username">
+<label for="loginPass">ລະຫັດຜ່ານ</label>
+<div class="pw-wrap"><input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••"><button type="button" id="loginPassToggle" aria-label="ສະແດງລະຫັດຜ່ານ">👁️</button></div>
+<div class="hint" id="setupHint" style="display:none">ນີ້ແມ່ນບັນຊີ <b>ຜູ້ດູແລລະບົບ</b> ທຳອິດ — ເຫັນ ແລະ ຈັດການໄດ້ທຸກຮ້ານ. ລະຫັດຜ່ານຢ່າງໜ້ອຍ 6 ຕົວ.</div>
+<button type="submit" class="btn" id="loginBtn">ເຂົ້າສູ່ລະບົບ</button>
+<div class="login-err" id="loginErr"></div>
+</form>
+</div>
 <div class="wrap">
 <div class="sticky-head">
 <header class="top">
 <h1 id="shopTitle">🛍️ ຂາຍເຄື່ອງ</h1>
 <div class="branch-pick">
-<select id="shopSel"></select>
+<select id="shopSel" class="admin-only"></select>
 <select id="branchSel"></select>
+<div class="user-pick">
+<span class="who" id="userChip"></span>
+<button type="button" id="changePwBtn" title="ປ່ຽນລະຫັດຜ່ານ">🔑</button>
+<button type="button" id="logoutBtn">ອອກ</button>
+</div>
 </div>
 </header>
 </div>
 
 <div class="tabs" id="tabs">
 <button class="on" data-tab="pos">🛒 ຂາຍເຄື່ອງ</button>
-<button data-tab="products">📦 ສິນຄ້າ</button>
+<button data-tab="products" class="owner-only">📦 ສິນຄ້າ</button>
 <button data-tab="summary">📊 ສະຫຼຸບ</button>
 <button data-tab="expenses">📒 ລົງບັນຊີ</button>
 <button data-tab="dashboard">📈 Dashboard</button>
@@ -319,11 +365,11 @@ details.inline .sec-body{padding:2px 12px 12px}
 </div>
 </div>
 
-<details class="sec">
+<details class="sec" id="settingsSec">
 <summary>⚙️ ຕັ້ງຄ່າຮ້ານ, ສາຂາ &amp; ພະນັກງານ</summary>
 <div class="sec-body">
 <h2>🏪 ຮ້ານ</h2>
-<div class="row">
+<div class="row admin-only">
 <input type="text" id="newShopName" placeholder="ຊື່ຮ້ານໃໝ່" style="max-width:260px">
 <button class="btn ghost sm" id="addShopBtn">➕ ເພີ່ມຮ້ານ</button>
 </div>
@@ -348,6 +394,24 @@ details.inline .sec-body{padding:2px 12px 12px}
 </div>
 <div class="tbl-scroll" style="margin-top:10px">
 <table><thead><tr><th>ຊື່ພະນັກງານ</th><th></th></tr></thead><tbody id="employeeBody"></tbody></table>
+</div>
+
+<h2 style="margin-top:20px">🔐 ບັນຊີເຂົ້າໃຊ້ແອັບ</h2>
+<div class="hint" style="margin:0 0 8px"><b>ເຈົ້າຂອງຮ້ານ</b>: ຈັດການໄດ້ທຸກຢ່າງໃນຮ້ານ. <b>ພະນັກງານ</b>: ຂາຍ, ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ, ປິດບັນຊີ — ບໍ່ສາມາດແກ້ສິນຄ້າ, ຕັ້ງຄ່າ ຫຼື ຍົກເລີກບິນ.</div>
+<div class="grid2" style="gap:8px">
+<input type="text" id="nuName" placeholder="ຊື່ (ເຊັ່ນ: ສົມ)">
+<input type="text" id="nuUser" placeholder="ຊື່ຜູ້ໃຊ້ (ອັງກິດ, ເຊັ່ນ: som)" autocapitalize="none" spellcheck="false">
+<input type="text" id="nuPass" placeholder="ລະຫັດຜ່ານ (ຢ່າງໜ້ອຍ 6 ຕົວ)" autocomplete="new-password">
+<select id="nuRole">
+<option value="staff">ພະນັກງານ</option>
+<option value="owner">ເຈົ້າຂອງຮ້ານ</option>
+<option value="admin" class="admin-only">ຜູ້ດູແລລະບົບ (ທຸກຮ້ານ)</option>
+</select>
+<select id="nuShop" class="admin-only"></select>
+</div>
+<div class="row" style="margin-top:8px"><button class="btn ghost sm" id="addUserBtn">➕ ເພີ່ມບັນຊີ</button></div>
+<div class="tbl-scroll" style="margin-top:10px">
+<table><thead><tr><th>ຊື່</th><th>ຊື່ຜູ້ໃຊ້</th><th>ສິດ</th><th></th></tr></thead><tbody id="userBody"></tbody></table>
 </div>
 </div>
 </details>
@@ -782,12 +846,13 @@ function run(fnName, args, onOk, onFail){
   fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ fn: fnName, args: args || [] })
+    body: JSON.stringify({ fn: fnName, args: args || [], token: SESSION ? SESSION.token : '' })
   })
     .then(function(r){ return r.json(); })
     .then(function(res){
       setBusy(false);
       if (res && res.ok) { if (onOk) onOk(res.result); }
+      else if (res && res.auth) { endSession(); showLogin(res.error); if (onFail) onFail(res.error); }
       else { var msg = (res && res.error) || 'ມີຂໍ້ຜິດພາດ'; toast('❌ ' + msg); if (onFail) onFail(msg); }
     })
     .catch(function(err){
@@ -878,6 +943,8 @@ $('shopSel').addEventListener('change', function(){
   renderShops();
   renderTodaySales();
   renderHeldChip();
+  renderUserShopSelect();
+  if ($('settingsSec').open) renderUsers();
   $('expBranchLabel').textContent = branchName(STATE.currentBranch);
   $('incBranchLabel').textContent = branchName(STATE.currentBranch);
 });
@@ -915,6 +982,7 @@ $('branchSel').addEventListener('change', function(){
 
 /* ---------- boot ---------- */
 function onBoot(data){
+  if (data.me && SESSION) { SESSION.user = data.me; saveSession(); applyRole(); }
   STATE.shops = data.shops || [];
   STATE.branches = data.branches || [];
   STATE.products = data.products || [];
@@ -927,8 +995,9 @@ function onBoot(data){
   renderShopSelect();
   renderBranchSelect();
 
+  renderUserShopSelect();
   if (!STATE.shops.length) {
-    toast('ກະລຸນາເພີ່ມຮ້ານກ່ອນ ທີ່ແຖບ 📦 ສິນຄ້າ');
+    toast(isAdmin() ? 'ກະລຸນາເພີ່ມຮ້ານກ່ອນ ທີ່ແຖບ 📦 ສິນຄ້າ' : 'ບັນຊີນີ້ຍັງບໍ່ໄດ້ຜູກກັບຮ້ານ');
   } else if (!shopBranches().length) {
     toast('ກະລຸນາເພີ່ມສາຂາກ່ອນ ທີ່ແຖບ 📦 ສິນຄ້າ');
   }
@@ -967,14 +1036,15 @@ function monthStr(){
 }
 
 var BOOTSTRAP_CACHE_KEY = 'syposBootstrapCacheV1';
+function bootstrapCacheKey(){ return BOOTSTRAP_CACHE_KEY + ':' + (SESSION ? SESSION.user.id : ''); }
 function loadCachedBootstrap(){
   try {
-    var raw = localStorage.getItem(BOOTSTRAP_CACHE_KEY);
+    var raw = localStorage.getItem(bootstrapCacheKey());
     return raw ? JSON.parse(raw) : null;
   } catch (e) { return null; }
 }
 function saveCachedBootstrap(data){
-  try { localStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify(data)); } catch (e) {}
+  try { localStorage.setItem(bootstrapCacheKey(), JSON.stringify(data)); } catch (e) {}
 }
 
 function reloadAll(after){
@@ -1452,7 +1522,7 @@ function renderPaidBillsModal(rows, itemsBySale){
       '<div class="tot">' + fmt(s.Total) + '</div>';
     line.addEventListener('click', function(){ showSaleDetail(s, items); });
     var delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn'; delBtn.textContent = '🗑️';
+    delBtn.className = 'icon-btn owner-only'; delBtn.textContent = '🗑️';
     delBtn.addEventListener('click', function(ev){
       ev.stopPropagation();
       confirmVoid(s.ID, s.BranchID, items, function(){ $('paidBillsModal').classList.remove('show'); });
@@ -1906,7 +1976,7 @@ function renderExpenses(){
         tr.addEventListener('click', function(){ showSaleDetail(r.sale, r.items); });
       } else if (r.type === 'income') {
         var incBtn = document.createElement('button');
-        incBtn.className = 'icon-btn'; incBtn.textContent = '🗑️';
+        incBtn.className = 'icon-btn owner-only'; incBtn.textContent = '🗑️';
         incBtn.addEventListener('click', function(ev){
           ev.stopPropagation();
           if (!window.confirm('ລຶບລາຍຮັບນີ້?')) return;
@@ -1915,7 +1985,7 @@ function renderExpenses(){
         td.appendChild(incBtn);
       } else {
         var expBtn = document.createElement('button');
-        expBtn.className = 'icon-btn'; expBtn.textContent = '🗑️';
+        expBtn.className = 'icon-btn owner-only'; expBtn.textContent = '🗑️';
         expBtn.addEventListener('click', function(ev){
           ev.stopPropagation();
           if (!window.confirm('ລຶບລາຍຈ່າຍນີ້?')) return;
@@ -2488,8 +2558,162 @@ function renderDashboardChart(map){
   box.innerHTML = '<div class="hint">↔️ ເລື່ອນເບິ່ງໄດ້ · ສີຂຽວ=ລາຍຮັບ ສີແດງ=ລາຍຈ່າຍ</div><div class="tbl-scroll">' + svg + '</div>';
 }
 
+/* ---------- ລັອກອິນ / ບັນຊີຜູ້ໃຊ້ ---------- */
+var SESSION_KEY = 'syposSessionV1';
+var SESSION = null;
+try { SESSION = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { SESSION = null; }
+var LOGIN_MODE = 'login';
+var ROLE_LABEL = { admin: 'ຜູ້ດູແລລະບົບ', owner: 'ເຈົ້າຂອງຮ້ານ', staff: 'ພະນັກງານ' };
+
+function saveSession(){ try { localStorage.setItem(SESSION_KEY, JSON.stringify(SESSION)); } catch (e) {} }
+function isAdmin(){ return !!(SESSION && SESSION.user.role === 'admin'); }
+function isOwner(){ return !!(SESSION && (SESSION.user.role === 'owner' || SESSION.user.role === 'admin')); }
+
+/** ລຶບ session ແລະ ຂໍ້ມູນທີ່ແຄັດໄວ້ໃນເຄື່ອງ ເພື່ອບໍ່ໃຫ້ຄົນຕໍ່ໄປທີ່ໃຊ້ເຄື່ອງນີ້ເຫັນຂໍ້ມູນ */
+function endSession(){
+  try {
+    Object.keys(localStorage).forEach(function(k){ if (k.indexOf(BOOTSTRAP_CACHE_KEY) === 0) localStorage.removeItem(k); });
+    localStorage.removeItem(SESSION_KEY);
+  } catch (e) {}
+  SESSION = null;
+  invalidateDataCache();
+}
+
+function applyRole(){
+  var role = SESSION ? SESSION.user.role : '';
+  document.body.classList.remove('role-admin', 'role-owner', 'role-staff');
+  if (role) document.body.classList.add('role-' + role);
+  $('userChip').textContent = SESSION ? ('👤 ' + SESSION.user.name + ' · ' + (ROLE_LABEL[role] || role)) : '';
+  var active = document.querySelector('#tabs button.on');
+  if (role === 'staff' && active && active.classList.contains('owner-only')) document.querySelector('#tabs button[data-tab="pos"]').click();
+}
+
+function showLogin(msg){
+  var setup = LOGIN_MODE === 'setup';
+  $('loginTitle').textContent = setup ? 'ຕັ້ງຄ່າຄັ້ງທຳອິດ' : 'ເຂົ້າສູ່ລະບົບ';
+  $('loginSub').textContent = setup ? 'ສ້າງບັນຊີຜູ້ດູແລລະບົບ' : 'ລະບົບ POS ຂາຍເຄື່ອງ';
+  $('setupNameRow').style.display = setup ? '' : 'none';
+  $('setupHint').style.display = setup ? '' : 'none';
+  $('loginBtn').textContent = setup ? 'ສ້າງບັນຊີ ແລະ ເຂົ້າສູ່ລະບົບ' : 'ເຂົ້າສູ່ລະບົບ';
+  $('loginPass').setAttribute('autocomplete', setup ? 'new-password' : 'current-password');
+  $('loginErr').textContent = msg || '';
+  $('loginErr').classList.toggle('show', !!msg);
+  $('loginPass').value = '';
+  $('loginScreen').classList.add('show');
+  setTimeout(function(){ (setup ? $('loginName') : $('loginUser')).focus(); }, 50);
+}
+
+function startSession(res){
+  SESSION = { token: res.token, user: res.user };
+  saveSession();
+  $('loginScreen').classList.remove('show');
+  STATE.currentShop = res.user.role === 'admin' ? STATE.currentShop : res.user.shopId;
+  STATE.currentBranch = null;
+  applyRole();
+  bootFromCacheThenNetwork();
+}
+
+$('loginPassToggle').addEventListener('click', function(){
+  var el = $('loginPass');
+  el.type = el.type === 'password' ? 'text' : 'password';
+});
+
+$('loginForm').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var user = $('loginUser').value.trim(), pass = $('loginPass').value;
+  var onFail = function(msg){ $('loginErr').textContent = msg; $('loginErr').classList.add('show'); };
+  var call = function(fn, args){
+    setBusy(true);
+    fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }) })
+      .then(function(r){ return r.json(); })
+      .then(function(res){ setBusy(false); if (res.ok) startSession(res.result); else onFail(res.error); })
+      .catch(function(err){ setBusy(false); onFail('ເຊື່ອມຕໍ່ບໍ່ໄດ້: ' + (err && err.message ? err.message : err)); });
+  };
+  if (LOGIN_MODE === 'setup') call('setupFirstAdmin', [$('loginName').value.trim(), user, pass]);
+  else call('login', [user, pass]);
+});
+
+$('logoutBtn').addEventListener('click', function(){
+  if (!window.confirm('ອອກຈາກລະບົບ?')) return;
+  var token = SESSION ? SESSION.token : '';
+  fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'logout', args: [], token: token }) }).catch(function(){});
+  endSession();
+  location.reload();
+});
+
+$('changePwBtn').addEventListener('click', function(){
+  var oldPw = window.prompt('ລະຫັດຜ່ານປັດຈຸບັນ:');
+  if (!oldPw) return;
+  var newPw = window.prompt('ລະຫັດຜ່ານໃໝ່ (ຢ່າງໜ້ອຍ 6 ຕົວ):');
+  if (!newPw) return;
+  if (window.prompt('ພິມລະຫັດຜ່ານໃໝ່ອີກຄັ້ງ:') !== newPw) { toast('❌ ລະຫັດຜ່ານໃໝ່ບໍ່ກົງກັນ'); return; }
+  run('changeMyPassword', [oldPw, newPw], function(){ toast('✅ ປ່ຽນລະຫັດຜ່ານແລ້ວ'); });
+});
+
+/* ---------- ຈັດການບັນຊີຜູ້ໃຊ້ (ເຈົ້າຂອງຮ້ານ/ຜູ້ດູແລ) ---------- */
+function renderUserShopSelect(){
+  var sel = $('nuShop');
+  sel.innerHTML = '';
+  STATE.shops.forEach(function(s){
+    var o = document.createElement('option'); o.value = s.ID; o.textContent = s.Name; sel.appendChild(o);
+  });
+  sel.value = STATE.currentShop || '';
+}
+
+function renderUsers(){
+  if (!isOwner()) return;
+  run('listUsers', [], function(users){
+    var body = $('userBody');
+    body.innerHTML = '';
+    var list = isAdmin() ? users.filter(function(u){ return u.role === 'admin' || u.shopId === STATE.currentShop; }) : users;
+    if (!list.length) { body.innerHTML = '<tr><td colspan="4" class="hint">ຍັງບໍ່ມີບັນຊີ</td></tr>'; return; }
+    list.forEach(function(u){
+      var tr = document.createElement('tr');
+      var tagCls = !u.active ? 'role-tag off' : ('role-tag' + (u.role === 'staff' ? ' staff' : ''));
+      tr.innerHTML = '<td>' + escapeHtml(u.name) + '</td><td>' + escapeHtml(u.username) + '</td><td><span class="' + tagCls + '">' + (u.active ? (ROLE_LABEL[u.role] || u.role) : 'ປິດແລ້ວ') + '</span></td><td style="white-space:nowrap"></td>';
+      var td = tr.lastElementChild;
+      if (SESSION && u.id !== SESSION.user.id) {
+        var pw = document.createElement('button');
+        pw.className = 'icon-btn'; pw.textContent = '🔑'; pw.title = 'ຕັ້ງລະຫັດຜ່ານໃໝ່';
+        pw.addEventListener('click', function(){
+          var np = window.prompt('ລະຫັດຜ່ານໃໝ່ສຳລັບ ' + u.name + ' (ຢ່າງໜ້ອຍ 6 ຕົວ):');
+          if (np) run('resetUserPassword', [u.id, np], function(){ toast('✅ ຕັ້ງລະຫັດຜ່ານໃໝ່ແລ້ວ'); });
+        });
+        var act = document.createElement('button');
+        act.className = 'icon-btn'; act.textContent = u.active ? '⛔' : '✅'; act.title = u.active ? 'ປິດບັນຊີ' : 'ເປີດບັນຊີຄືນ';
+        act.addEventListener('click', function(){
+          if (u.active && !window.confirm('ປິດບັນຊີ ' + u.name + '? ຄົນນີ້ຈະຖືກອອກຈາກລະບົບທັນທີ.')) return;
+          run('setUserActive', [u.id, !u.active], function(){ toast('✅ ອັບເດດແລ້ວ'); renderUsers(); });
+        });
+        td.appendChild(pw); td.appendChild(act);
+      }
+      body.appendChild(tr);
+    });
+  });
+}
+
+$('addUserBtn').addEventListener('click', function(){
+  var u = { name: $('nuName').value.trim(), username: $('nuUser').value.trim(), password: $('nuPass').value, role: $('nuRole').value, shopId: isAdmin() ? $('nuShop').value : '' };
+  if (!u.username || !u.password) { toast('❌ ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ ແລະ ລະຫັດຜ່ານ'); return; }
+  run('addUser', [u], function(){
+    toast('✅ ເພີ່ມບັນຊີ ' + u.username + ' ແລ້ວ');
+    $('nuName').value = ''; $('nuUser').value = ''; $('nuPass').value = '';
+    renderUsers();
+  });
+});
+
+$('settingsSec').addEventListener('toggle', function(){ if (this.open) renderUsers(); });
+
 /* ---------- start ---------- */
-bootFromCacheThenNetwork();
+if (SESSION && SESSION.token) {
+  applyRole();
+  bootFromCacheThenNetwork();
+} else {
+  fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'setupStatus', args: [] }) })
+    .then(function(r){ return r.json(); })
+    .then(function(res){ LOGIN_MODE = (res.ok && res.result.needsSetup) ? 'setup' : 'login'; showLogin(); })
+    .catch(function(){ showLogin(); });
+}
 })();
 </script>
 <script>
