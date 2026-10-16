@@ -40,7 +40,7 @@ border:none;border-radius:10px;padding:9px 11px;font-family:inherit;font-size:14
 background:rgba(255,255,255,.16);color:#fff;
 }
 .branch-pick select option{color:#16211d}
-.tabs{display:flex;gap:6px;margin-top:12px;overflow-x:auto;padding-bottom:2px}
+.tabs{display:flex;gap:6px;margin-top:10px;overflow-x:auto;padding-bottom:2px}
 .tabs button{
 flex:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;
 font-family:inherit;font-size:13.5px;color:var(--muted);cursor:pointer;white-space:nowrap;
@@ -72,19 +72,25 @@ input:focus,select:focus,textarea:focus{outline:2px solid #0f7a5a33;border-color
 .chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;cursor:pointer;color:var(--muted)}
 .chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
-.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+@media (max-width:340px){.pgrid{grid-template-columns:repeat(3,1fr)}}
+@media (min-width:600px){.pgrid{grid-template-columns:repeat(5,1fr);gap:8px}}
+@media (min-width:900px){.pgrid{grid-template-columns:repeat(7,1fr)}}
 .pcard{position:relative;border:1px solid var(--line);border-radius:12px;padding:0;background:#fff;cursor:pointer;text-align:center;overflow:hidden;display:flex;flex-direction:column}
 .pcard:hover{border-color:var(--accent)}
 .pcard .thumb{position:relative;width:100%;aspect-ratio:1/1;object-fit:cover;margin:0;border-radius:0;background:#eef2f0;display:block}
-.pcard .info{padding:7px 8px 9px;background:#fff}
-.pcard .nm{font-size:12.5px;font-weight:700;line-height:1.3;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pcard .pr{font-size:13.5px;color:var(--accent);font-weight:800;margin-top:3px}
-.pcard .st{position:absolute;top:6px;right:6px;font-size:10.5px;color:#fff;background:rgba(10,20,16,.55);padding:2px 7px;border-radius:999px}
+.pcard{border-radius:10px}
+.pcard .info{padding:5px 5px 6px;background:#fff;display:flex;flex-direction:column;gap:2px;flex:1}
+.pcard .nm{font-size:11.5px;font-weight:700;line-height:1.25;color:var(--ink);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal;min-height:2.5em}
+.pcard .pr{font-size:12px;color:var(--accent);font-weight:800;margin-top:auto}
+.pcard .st{position:absolute;top:4px;right:4px;font-size:9.5px;color:#fff;background:rgba(10,20,16,.55);padding:1px 6px;border-radius:999px}
 .pcard .st.low{background:var(--out)}
 .pcard[disabled]{opacity:.45;cursor:not-allowed}
 /* ສິນຄ້າທີ່ບໍ່ມີຮູບ: ສະແດງເປັນກ່ອງສີເທົາລ້ວນ, ບໍ່ມີຮູບ/ໄອຄອນ, ມີແຕ່ຕົວໜັງສືກາງກ່ອງ */
 .pcard.noimg{background:#e4e8ea;aspect-ratio:1/1}
-.pcard.noimg .info{position:static;height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px;background:none}
+.pcard.noimg .info{position:static;height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px;background:none}
+.pcard.noimg .nm{min-height:0}
+.pcard.noimg .pr{margin-top:0}
 .pcard.noimg .nm{color:#2a3338;white-space:normal}
 .pcard.noimg .pr{color:#51616a}
 .pcard.noimg .st{color:#2a3338;background:rgba(255,255,255,.65)}
@@ -292,8 +298,6 @@ body:not(.role-admin) .admin-only{display:none !important}
 </div>
 </div>
 </header>
-</div>
-
 <div class="tabs" id="tabs">
 <button class="on" data-tab="pos">🛒 ຂາຍເຄື່ອງ</button>
 <button data-tab="products" class="owner-only">📦 ສິນຄ້າ</button>
@@ -301,6 +305,9 @@ body:not(.role-admin) .admin-only{display:none !important}
 <button data-tab="expenses">📒 ລົງບັນຊີ</button>
 <button data-tab="dashboard">📈 Dashboard</button>
 </div>
+</div>
+
+
 
 <!-- ===== POS ===== -->
 <section class="view on" id="view-pos">
