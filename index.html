@@ -127,6 +127,7 @@ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 .pay-opt.on{border-color:var(--accent);background:var(--accent-soft);font-weight:700;color:var(--accent)}
 .split-fields{display:none;gap:8px;margin:-6px 0 12px}
 .split-fields.show{display:grid;grid-template-columns:1fr 1fr}
+.settings-box h2{margin:18px 0 10px;font-size:15px;font-weight:700}
 /* ໜ້າກະຕ່າ: ໂຕໜັງສືໃຫຍ່ ອ່ານງ່າຍ ເຕັມຈໍ */
 #cartModal .box{max-width:640px;max-height:94vh;padding:20px 18px 24px;font-size:17px}
 #cartModal h3{font-size:20px;margin-bottom:12px}
@@ -385,56 +386,7 @@ body:not(.role-admin) .admin-only{display:none !important}
 </div>
 </div>
 
-<details class="sec" id="settingsSec">
-<summary>⚙️ ຕັ້ງຄ່າຮ້ານ, ສາຂາ &amp; ພະນັກງານ</summary>
-<div class="sec-body">
-<h2>🏪 ຮ້ານ</h2>
-<div class="row admin-only">
-<input type="text" id="newShopName" placeholder="ຊື່ຮ້ານໃໝ່" style="max-width:260px">
-<button class="btn ghost sm" id="addShopBtn">➕ ເພີ່ມຮ້ານ</button>
-</div>
-<div class="tbl-scroll" style="margin-top:10px">
-<table><thead><tr><th>ຊື່ຮ້ານ</th><th></th></tr></thead><tbody id="shopBody"></tbody></table>
-</div>
 
-<h2 style="margin-top:20px">🏬 ສາຂາ (<span id="branchShopName"></span>)</h2>
-<div class="row">
-<input type="text" id="newBranchName" placeholder="ຊື່ສາຂາໃໝ່" style="max-width:260px">
-<button class="btn ghost sm" id="addBranchBtn">➕ ເພີ່ມສາຂາ</button>
-</div>
-<div class="tbl-scroll" style="margin-top:10px">
-<table><thead><tr><th>ຊື່ສາຂາ</th><th></th></tr></thead><tbody id="branchBody"></tbody></table>
-</div>
-
-<h2 style="margin-top:20px">👤 ພະນັກງານ (<span id="employeeShopName"></span>)</h2>
-<div class="hint" style="margin:0 0 8px">ເພີ່ມລາຍຊື່ພະນັກງານເພື່ອເລືອກຕອນຂາຍ ແລະ ເບິ່ງຍອດຂາຍແຍກຕາມຄົນຢູ່ໜ້າສະຫຼຸບ</div>
-<div class="row">
-<input type="text" id="newEmployeeName" placeholder="ຊື່ພະນັກງານໃໝ່" style="max-width:260px">
-<button class="btn ghost sm" id="addEmployeeBtn">➕ ເພີ່ມພະນັກງານ</button>
-</div>
-<div class="tbl-scroll" style="margin-top:10px">
-<table><thead><tr><th>ຊື່ພະນັກງານ</th><th></th></tr></thead><tbody id="employeeBody"></tbody></table>
-</div>
-
-<h2 style="margin-top:20px">🔐 ບັນຊີເຂົ້າໃຊ້ແອັບ</h2>
-<div class="hint" style="margin:0 0 8px"><b>ເຈົ້າຂອງຮ້ານ</b>: ຈັດການໄດ້ທຸກຢ່າງໃນຮ້ານ. <b>ພະນັກງານ</b>: ຂາຍ, ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ, ປິດບັນຊີ — ບໍ່ສາມາດແກ້ສິນຄ້າ, ຕັ້ງຄ່າ ຫຼື ຍົກເລີກບິນ.</div>
-<div class="grid2" style="gap:8px">
-<input type="text" id="nuName" placeholder="ຊື່ (ເຊັ່ນ: ສົມ)">
-<input type="text" id="nuUser" placeholder="ຊື່ຜູ້ໃຊ້ (ອັງກິດ, ເຊັ່ນ: som)" autocapitalize="none" spellcheck="false">
-<input type="text" id="nuPass" placeholder="ລະຫັດຜ່ານ (ຢ່າງໜ້ອຍ 6 ຕົວ)" autocomplete="new-password">
-<select id="nuRole">
-<option value="staff">ພະນັກງານ</option>
-<option value="owner">ເຈົ້າຂອງຮ້ານ</option>
-<option value="admin" class="admin-only">ຜູ້ດູແລລະບົບ (ທຸກຮ້ານ)</option>
-</select>
-<select id="nuShop" class="admin-only"></select>
-</div>
-<div class="row" style="margin-top:8px"><button class="btn ghost sm" id="addUserBtn">➕ ເພີ່ມບັນຊີ</button></div>
-<div class="tbl-scroll" style="margin-top:10px">
-<table><thead><tr><th>ຊື່</th><th>ຊື່ຜູ້ໃຊ້</th><th>ສິດ</th><th></th></tr></thead><tbody id="userBody"></tbody></table>
-</div>
-</div>
-</details>
 </div>
 
 <div id="prodCategorySection" style="display:none">
@@ -706,6 +658,64 @@ body:not(.role-admin) .admin-only{display:none !important}
 </div>
 </div>
 
+<!-- ===== SETTINGS MODAL (ຕັ້ງຄ່າຮ້ານ, ສາຂາ, ພະນັກງານ & ບັນຊີ) ===== -->
+<div class="modal" id="settingsModal">
+<div class="box lg settings-box">
+<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+<h3 style="margin:0">⚙️ ຕັ້ງຄ່າຮ້ານ, ສາຂາ, ພະນັກງານ &amp; ບັນຊີ</h3>
+<button type="button" class="icon-btn" id="closeSettingsX" aria-label="ປິດ" style="font-size:20px">✕</button>
+</div>
+<h2>🏪 ຮ້ານ</h2>
+<div class="row admin-only">
+<input type="text" id="newShopName" placeholder="ຊື່ຮ້ານໃໝ່" style="max-width:260px">
+<button class="btn ghost sm" id="addShopBtn">➕ ເພີ່ມຮ້ານ</button>
+</div>
+<div class="tbl-scroll" style="margin-top:10px">
+<table><thead><tr><th>ຊື່ຮ້ານ</th><th></th></tr></thead><tbody id="shopBody"></tbody></table>
+</div>
+
+<h2 style="margin-top:20px">🏬 ສາຂາ (<span id="branchShopName"></span>)</h2>
+<div class="row">
+<input type="text" id="newBranchName" placeholder="ຊື່ສາຂາໃໝ່" style="max-width:260px">
+<button class="btn ghost sm" id="addBranchBtn">➕ ເພີ່ມສາຂາ</button>
+</div>
+<div class="tbl-scroll" style="margin-top:10px">
+<table><thead><tr><th>ຊື່ສາຂາ</th><th></th></tr></thead><tbody id="branchBody"></tbody></table>
+</div>
+
+<h2 style="margin-top:20px">👤 ພະນັກງານ (<span id="employeeShopName"></span>)</h2>
+<div class="hint" style="margin:0 0 8px">ເພີ່ມລາຍຊື່ພະນັກງານເພື່ອເລືອກຕອນຂາຍ ແລະ ເບິ່ງຍອດຂາຍແຍກຕາມຄົນຢູ່ໜ້າສະຫຼຸບ</div>
+<div class="row">
+<input type="text" id="newEmployeeName" placeholder="ຊື່ພະນັກງານໃໝ່" style="max-width:260px">
+<button class="btn ghost sm" id="addEmployeeBtn">➕ ເພີ່ມພະນັກງານ</button>
+</div>
+<div class="tbl-scroll" style="margin-top:10px">
+<table><thead><tr><th>ຊື່ພະນັກງານ</th><th></th></tr></thead><tbody id="employeeBody"></tbody></table>
+</div>
+
+<h2 style="margin-top:20px">🔐 ບັນຊີເຂົ້າໃຊ້ແອັບ</h2>
+<div class="hint" style="margin:0 0 8px"><b>ເຈົ້າຂອງຮ້ານ</b>: ຈັດການໄດ້ທຸກຢ່າງໃນຮ້ານ. <b>ພະນັກງານ</b>: ຂາຍ, ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ, ປິດບັນຊີ — ບໍ່ສາມາດແກ້ສິນຄ້າ, ຕັ້ງຄ່າ ຫຼື ຍົກເລີກບິນ.</div>
+<div class="grid2" style="gap:8px">
+<input type="text" id="nuName" placeholder="ຊື່ (ເຊັ່ນ: ສົມ)">
+<input type="text" id="nuUser" placeholder="ຊື່ຜູ້ໃຊ້ (ອັງກິດ, ເຊັ່ນ: som)" autocapitalize="none" spellcheck="false">
+<input type="text" id="nuPass" placeholder="ລະຫັດຜ່ານ (ຢ່າງໜ້ອຍ 6 ຕົວ)" autocomplete="new-password">
+<select id="nuRole">
+<option value="staff">ພະນັກງານ</option>
+<option value="owner">ເຈົ້າຂອງຮ້ານ</option>
+<option value="admin" class="admin-only">ຜູ້ດູແລລະບົບ (ທຸກຮ້ານ)</option>
+</select>
+<select id="nuShop" class="admin-only"></select>
+</div>
+<div class="row" style="margin-top:8px"><button class="btn ghost sm" id="addUserBtn">➕ ເພີ່ມບັນຊີ</button></div>
+<div class="tbl-scroll" style="margin-top:10px">
+<table><thead><tr><th>ຊື່</th><th>ຊື່ຜູ້ໃຊ້</th><th>ສິດ</th><th></th></tr></thead><tbody id="userBody"></tbody></table>
+</div>
+<div class="row" style="margin-top:16px">
+<button class="btn ghost" id="closeSettingsBtn" style="flex:1">ປິດ</button>
+</div>
+</div>
+</div>
+
 <!-- ===== HELD BILLS MODAL ===== -->
 <div class="modal" id="heldBillsModal">
 <div class="box">
@@ -964,7 +974,7 @@ $('shopSel').addEventListener('change', function(){
   renderTodaySales();
   renderHeldChip();
   renderUserShopSelect();
-  if ($('settingsSec').open) renderUsers();
+  if ($('settingsModal').classList.contains('show')) renderUsers();
   $('expBranchLabel').textContent = branchName(STATE.currentBranch);
   $('incBranchLabel').textContent = branchName(STATE.currentBranch);
 });
@@ -2662,12 +2672,14 @@ $('logoutBtn').addEventListener('click', function(){
 });
 
 $('settingsBtn').addEventListener('click', function(){
-  document.querySelector('#tabs button[data-tab="products"]').click();
-  showProductsSubView('list');
-  var sec = $('settingsSec');
-  if (!sec.open) sec.open = true;
-  setTimeout(function(){ sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+  renderShops(); renderBranches(); renderEmployeeManage(); renderUserShopSelect(); renderUsers();
+  $('settingsModal').classList.add('show');
+  $('settingsModal').querySelector('.box').scrollTop = 0;
 });
+function closeSettings(){ $('settingsModal').classList.remove('show'); }
+$('closeSettingsBtn').addEventListener('click', closeSettings);
+$('closeSettingsX').addEventListener('click', closeSettings);
+$('settingsModal').addEventListener('click', function(ev){ if (ev.target === this) closeSettings(); });
 
 $('changePwBtn').addEventListener('click', function(){
   var oldPw = window.prompt('ລະຫັດຜ່ານປັດຈຸບັນ:');
@@ -2730,7 +2742,6 @@ $('addUserBtn').addEventListener('click', function(){
   });
 });
 
-$('settingsSec').addEventListener('toggle', function(){ if (this.open) renderUsers(); });
 
 /* ---------- start ---------- */
 if (SESSION && SESSION.token) {
