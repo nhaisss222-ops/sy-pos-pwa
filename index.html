@@ -145,6 +145,18 @@ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 #cartModal input,#cartModal select{font-size:17px;padding:12px}
 #cartModal .pay-opt{font-size:16px;padding:14px 4px}
 #cartModal .btn{font-size:17px;padding:14px 16px}
+/* ສ່ວນຫຼຸດແຕ່ລະເມນູ */
+.cart-item{border-bottom:1px solid var(--line);padding-bottom:10px}
+.cart-item .cart-line{border-bottom:none;padding-bottom:4px}
+.line-disc{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.line-disc .lbl{font-size:14.5px;color:var(--muted)}
+#cartModal .line-disc input{width:110px;padding:8px 10px;font-size:16px}
+.disc-type{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.disc-type button{border:none;background:#fff;padding:8px 12px;font-family:inherit;font-size:15px;cursor:pointer;color:var(--muted)}
+.disc-type button.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.line-disc .lt{margin-left:auto;text-align:right;font-size:16px;font-weight:700;white-space:nowrap}
+.line-disc .lt s{display:block;font-size:13px;font-weight:400;color:var(--muted)}
+.line-disc .lt.disc{color:var(--out)}
 
 /* tables */
 .tbl-scroll{overflow-x:auto}
@@ -620,7 +632,7 @@ body:not(.role-admin) .admin-only{display:none !important}
 <span style="font-weight:600">ລວມຍ່ອຍ</span>
 <span class="tot" id="modalSubtotal">0 ກີບ</span>
 </div>
-<label class="fld" style="margin-top:8px">🏷️ ສ່ວນຫຼຸດ (ກີບ)
+<label class="fld" style="margin-top:8px">🏷️ ສ່ວນຫຼຸດທັງບິນ (ກີບ)
 <input type="text" id="cartDiscount" inputmode="decimal" placeholder="0">
 </label>
 <div class="row" style="justify-content:space-between;margin-top:6px">
@@ -1314,9 +1326,21 @@ function addToCart(p){
   toast('➕ ' + p.Name);
 }
 
+/* ສ່ວນຫຼຸດແຕ່ລະເມນູ: discType 'kip' (ກີບ ຕໍ່ລາຍການນັ້ນທັງໝົດ) ຫຼື 'pct' (%), ບໍ່ໃຫ້ເກີນຍອດຂອງລາຍການນັ້ນ */
+function lineGross(l){ return (Number(l.qty) || 0) * (Number(l.price) || 0); }
+function lineDiscount(l){
+  var g = lineGross(l), v = Number(l.discVal) || 0;
+  if (v <= 0) return 0;
+  var d = l.discType === 'pct' ? Math.round(g * Math.min(v, 100) / 100) : v;
+  return d > g ? g : d;
+}
+function cartLineDiscountTotal(){
+  return STATE.cart.reduce(function(s, l){ return s + lineDiscount(l); }, 0);
+}
+/* ລວມຍ່ອຍ = ຍອດທຸກລາຍການ ຫຼັງຫັກສ່ວນຫຼຸດແຕ່ລະເມນູແລ້ວ */
 function cartTotal(){
   var t = 0;
-  STATE.cart.forEach(function(l){ t += l.qty * l.price; });
+  STATE.cart.forEach(function(l){ t += lineGross(l) - lineDiscount(l); });
   return t;
 }
 
@@ -1332,18 +1356,34 @@ function finalCartTotal(){
   return cartTotal() - cartDiscount();
 }
 
-function renderCart(){
+/* ອັບເດດສະເພາະຕົວເລກ (ບໍ່ສ້າງລາຍການໃໝ່) — ໃຊ້ຕອນພິມສ່ວນຫຼຸດ ເພື່ອບໍ່ໃຫ້ຊ່ອງພິມເສຍ focus */
+function updateCartTotals(){
   var count = STATE.cart.reduce(function(s, l){ return s + l.qty; }, 0);
   $('cartBar').style.display = count ? 'flex' : 'none';
   $('cartCount').textContent = count + ' ລາຍການ';
   $('cartTotal').textContent = fmt(finalCartTotal()) + ' ກີບ';
   $('modalSubtotal').textContent = fmt(cartTotal()) + ' ກີບ';
   $('modalTotal').textContent = fmt(finalCartTotal()) + ' ກີບ';
+  document.querySelectorAll('#cartLines .lt').forEach(function(el){
+    var l = STATE.cart[Number(el.getAttribute('data-idx'))];
+    if (!l) return;
+    var d = lineDiscount(l), g = lineGross(l);
+    el.className = 'lt' + (d ? ' disc' : '');
+    el.innerHTML = (d ? '<s>' + fmt(g) + '</s>' : '') + fmt(g - d) + ' ກີບ';
+  });
+  if (payType === 'split' && document.activeElement !== $('splitCashAmount') && document.activeElement !== $('splitTransferAmount')) {
+    $('splitCashAmount').value = fmt(finalCartTotal());
+    $('splitTransferAmount').value = fmt(0);
+  }
+}
 
+function renderCart(){
   var box = $('cartLines');
   box.innerHTML = '';
   $('cartEmptyMsg').style.display = STATE.cart.length ? 'none' : 'block';
   STATE.cart.forEach(function(l, idx){
+    var item = document.createElement('div');
+    item.className = 'cart-item';
     var row = document.createElement('div');
     row.className = 'cart-line';
     row.innerHTML = '<div class="nm">' + escapeHtml(l.name) + '<div class="pr">' + fmt(l.price) + ' ກີບ/' + (l.unit || 'ອັນ') + '</div></div>' +
@@ -1352,8 +1392,43 @@ function renderCart(){
     row.querySelector('[data-a="inc"]').addEventListener('click', function(){ STATE.cart[idx].qty += 1; renderCart(); });
     row.querySelector('[data-a="dec"]').addEventListener('click', function(){ STATE.cart[idx].qty -= 1; if (STATE.cart[idx].qty <= 0) STATE.cart.splice(idx, 1); renderCart(); });
     row.querySelector('[data-a="rm"]').addEventListener('click', function(){ STATE.cart.splice(idx, 1); renderCart(); });
-    box.appendChild(row);
+    item.appendChild(row);
+
+    var type = l.discType === 'pct' ? 'pct' : 'kip';
+    var disc = document.createElement('div');
+    disc.className = 'line-disc';
+    disc.innerHTML = '<span class="lbl">🏷️ ຫຼຸດ</span>' +
+      '<input type="text" inputmode="decimal" placeholder="0" value="' + (Number(l.discVal) ? (type === 'pct' ? l.discVal : fmt(l.discVal)) : '') + '">' +
+      '<span class="disc-type"><button type="button" data-t="kip" class="' + (type === 'kip' ? 'on' : '') + '">ກີບ</button><button type="button" data-t="pct" class="' + (type === 'pct' ? 'on' : '') + '">%</button></span>' +
+      '<span class="lt" data-idx="' + idx + '"></span>';
+    var inp = disc.querySelector('input');
+    inp.addEventListener('input', function(e){
+      var line = STATE.cart[idx];
+      if (line.discType === 'pct') {
+        var v = parseFloat(inp.value.replace(/,/g, '')) || 0;
+        if (v > 100) { v = 100; inp.value = '100'; }
+        line.discVal = v;
+      } else {
+        liveFormatAmount(e);
+        line.discVal = parseAmount(inp.value);
+      }
+      updateCartTotals();
+    });
+    inp.addEventListener('blur', function(e){ if (STATE.cart[idx] && STATE.cart[idx].discType !== 'pct') finalizeFormatAmount(e); });
+    disc.querySelectorAll('.disc-type button').forEach(function(b){
+      b.addEventListener('click', function(){
+        var line = STATE.cart[idx];
+        var t = b.getAttribute('data-t');
+        if (line.discType === t || (!line.discType && t === 'kip')) return;
+        line.discType = t;
+        line.discVal = 0;
+        renderCart();
+      });
+    });
+    item.appendChild(disc);
+    box.appendChild(item);
   });
+  updateCartTotals();
 }
 
 $('openCartBtn').addEventListener('click', function(){ $('cartModal').classList.add('show'); });
@@ -1407,7 +1482,7 @@ function renderHeldBillsModal(){
 function resumeHeldBill(h){
   if (STATE.cart.length && !window.confirm('ກະຕ່າປັດຈຸບັນຍັງມີລາຍການຢູ່ — ດຶງບິນນີ້ມາຈະທັບກະຕ່າເກົ່າ. ແທ້ບໍ?')) return;
   STATE.cart = (h.Items || []).map(function(it){
-    return { productId: it.productId, name: it.name, price: Number(it.price) || 0, qty: Number(it.qty) || 0, unit: it.unit || '' };
+    return { productId: it.productId, name: it.name, price: Number(it.price) || 0, qty: Number(it.qty) || 0, unit: it.unit || '', discVal: Number(it.discVal) || 0, discType: it.discType || 'kip' };
   });
   STATE.resumingHeldBillId = h.ID;
   $('holdCustomerName').value = h.CustomerName || '';
@@ -1420,7 +1495,7 @@ function resumeHeldBill(h){
 $('holdBillBtn').addEventListener('click', function(){
   if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
   if (!STATE.cart.length) { toast('❌ ກະຕ່າວ່າງເປົ່າ'); return; }
-  var items = STATE.cart.map(function(l){ return { productId: l.productId, name: l.name, qty: l.qty, price: l.price, unit: l.unit || '' }; });
+  var items = STATE.cart.map(function(l){ return { productId: l.productId, name: l.name, qty: l.qty, price: l.price, unit: l.unit || '', discVal: Number(l.discVal) || 0, discType: l.discType || 'kip' }; });
   var payload = { branchId: STATE.currentBranch, customerName: $('holdCustomerName').value || '', items: items, note: $('saleNote').value || '' };
   run('holdBill', [payload], function(res){
     toast('✅ ບັນທຶກບິນລໍຖ້າແລ້ວ ' + fmt(res.total) + ' ກີບ');
@@ -1475,8 +1550,14 @@ attachAmountFormatting(['pPrice','pStockQty','pMinStock','iAmount','eAmount','cl
 $('checkoutBtn').addEventListener('click', function(){
   if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
   if (!STATE.cart.length) { toast('❌ ກະຕ່າວ່າງເປົ່າ'); return; }
-  var items = STATE.cart.map(function(l){ return { productId: l.productId, name: l.name, qty: l.qty, price: l.price }; });
-  var discount = cartDiscount();
+  var items = STATE.cart.map(function(l){
+    var d = lineDiscount(l);
+    var nm = l.name;
+    if (d) nm += ' (ຫຼຸດ ' + (l.discType === 'pct' ? (l.discVal + '% = ') : '') + fmt(d) + ' ກີບ)';
+    return { productId: l.productId, name: nm, qty: l.qty, price: l.price };
+  });
+  /* backend ຄິດ Total = ລາຄາເຕັມ − discount, ສະນັ້ນສົ່ງສ່ວນຫຼຸດແຕ່ລະເມນູ + ສ່ວນຫຼຸດທັງບິນ ລວມກັນ */
+  var discount = cartLineDiscountTotal() + cartDiscount();
   var sale = { branchId: STATE.currentBranch, paymentType: payType, items: items, note: $('saleNote').value || '', employeeId: $('saleEmployee').value || '', discount: discount };
   if (payType === 'split') {
     var cashAmt = parseAmount($('splitCashAmount').value);
