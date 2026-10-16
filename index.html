@@ -134,6 +134,11 @@ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 .split-fields{display:none;gap:8px;margin:-6px 0 12px}
 .split-fields.show{display:grid;grid-template-columns:1fr 1fr}
 .settings-box h2{margin:18px 0 10px;font-size:15px;font-weight:700}
+.close-income{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.close-income .ci{background:var(--accent-soft);border-radius:10px;padding:10px 12px}
+.close-income .ci .k{font-size:12.5px;color:var(--muted)}
+.close-income .ci .v{font-size:17px;font-weight:800;color:var(--accent)}
+.close-income .hint{grid-column:1/-1;margin:0}
 /* ໜ້າກະຕ່າ: ໂຕໜັງສືໃຫຍ່ ອ່ານງ່າຍ ເຕັມຈໍ */
 #cartModal .box{max-width:640px;max-height:94vh;padding:20px 18px 24px;font-size:17px}
 #cartModal h3{font-size:20px;margin-bottom:12px}
@@ -529,7 +534,8 @@ body:not(.role-admin) .admin-only{display:none !important}
 <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:10px">📒 ປິດບັນຊີປະຈຳວັນ</div>
 <div id="closeClosedSummary" style="display:none"></div>
 <div id="closeFormArea">
-<div class="grid2">
+<div id="closeIncomeInfo" class="close-income"></div>
+<div class="grid2" style="display:none">
 <label class="fld">ຮັບເງິນສົດ (ນັບຕົວຈິງ)
 <input type="text" id="closeCash" inputmode="decimal" placeholder="0">
 </label>
@@ -537,7 +543,7 @@ body:not(.role-admin) .admin-only{display:none !important}
 <input type="text" id="closeTransfer" inputmode="decimal" placeholder="0">
 </label>
 </div>
-<div class="hint" style="margin:14px 0 0;font-weight:700;color:var(--ink)">➖ ລາຍຈ່າຍ (ບໍ່ຈຳເປັນ — ກົດ "ບັນທຶກລາຍຈ່າຍ" ໄດ້ຫຼາຍລາຍການກ່ອນຈະລົງບັນຊີ)</div>
+<div class="hint" style="margin:12px 0 0;font-weight:700;color:var(--ink)">➖ ລາຍຈ່າຍ (ບໍ່ຈຳເປັນ — ກົດ "ບັນທຶກລາຍຈ່າຍ" ໄດ້ຫຼາຍລາຍການກ່ອນຈະລົງບັນຊີ)</div>
 <div class="grid2" style="margin-top:8px">
 <label class="fld">ໝວດລາຍຈ່າຍ
 <select id="closeExpCategory"></select>
@@ -1213,8 +1219,8 @@ $('closeDayBtn').addEventListener('click', function(){
   var payload = {
     branchId: STATE.currentBranch,
     date: dateStr,
-    cash: parseAmount($('closeCash').value),
-    transfer: parseAmount($('closeTransfer').value)
+    cash: (STATE.closeDayCalc && STATE.closeDayCalc.cash) || 0,
+    transfer: (STATE.closeDayCalc && STATE.closeDayCalc.transfer) || 0
   };
   var expAmount = parseAmount($('closeExpAmount').value);
   function finishClose(){
@@ -2381,6 +2387,11 @@ function renderSummary(){
     $('sumEmpty').style.display = keys.length ? 'none' : 'block';
 
     var dm = map[dayKey] || { cash: 0, transfer: 0, exp: 0 };
+    /* ຮັບເງິນ = ຄຳນວນຈາກຍອດຂາຍ/ລາຍຮັບອັດຕະໂນມັດ (ບໍ່ຕ້ອງພິມ) — ລົງບັນຊີດ້ວຍຕົວເລກນີ້ສະເໝີ */
+    STATE.closeDayCalc = { cash: dm.cash, transfer: dm.transfer };
+    $('closeIncomeInfo').innerHTML = '<div class="ci"><div class="k">💵 ຮັບເງິນສົດ</div><div class="v">' + fmt(dm.cash) + ' ກີບ</div></div>' +
+      '<div class="ci"><div class="k">🏦 ຮັບເງິນໂອນ</div><div class="v">' + fmt(dm.transfer) + ' ກີບ</div></div>' +
+      '<div class="hint">ຄຳນວນອັດຕະໂນມັດຈາກຍອດຂາຍ ແລະ ລາຍຮັບຂອງມື້ນີ້</div>';
 
     var dayClosing = closingByDate[dayKey];
     var closeFormArea = $('closeFormArea');
