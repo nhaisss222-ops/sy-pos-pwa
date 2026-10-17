@@ -27,7 +27,8 @@ font-family:"Noto Sans Lao","Noto Sans Lao UI","Phetsarath OT","Saysettha OT","S
 font-size:15px; line-height:1.55; padding-bottom:74px;
 }
 .wrap{max-width:1080px;margin:0 auto;padding:16px}
-.sticky-head{position:sticky;top:0;z-index:55;background:var(--bg);padding-top:16px;margin-top:-16px;padding-bottom:6px}
+.sticky-head{position:sticky;top:0;z-index:55;background:var(--bg);padding-top:8px;padding-bottom:6px;margin-top:4px}
+.sticky-head .tabs{margin-top:0}
 header.top{
 background:linear-gradient(135deg,#0f7a5a,#0b5f47); color:#fff;
 padding:16px; border-radius:var(--radius); box-shadow:var(--shadow);
@@ -289,7 +290,6 @@ body:not(.role-admin) .admin-only{display:none !important}
 </form>
 </div>
 <div class="wrap">
-<div class="sticky-head">
 <header class="top">
 <h1 id="shopTitle">🛍️ ຂາຍເຄື່ອງ</h1>
 <div class="branch-pick">
@@ -303,6 +303,7 @@ body:not(.role-admin) .admin-only{display:none !important}
 </div>
 </div>
 </header>
+<div class="sticky-head">
 <div class="tabs" id="tabs">
 <button class="on" data-tab="pos">🛒 ຂາຍເຄື່ອງ</button>
 <button data-tab="products" class="owner-only">📦 ສິນຄ້າ</button>
@@ -529,8 +530,9 @@ body:not(.role-admin) .admin-only{display:none !important}
 <button type="button" class="btn ghost" id="sumPeriodBtn" style="padding:8px 14px;flex:0 0 auto">🗓️ ເລືອກໄລຍະເວລາ</button>
 </div>
 <div class="cards" id="sumCards"></div>
+<div class="hint" id="sumClosedNote" style="margin:-4px 0 10px;display:none"></div>
 <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:8px" id="sumDayLabel"></div>
-<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:14px">
+<div id="closeSection" style="border-top:1px solid var(--line);margin-top:12px;padding-top:14px">
 <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:10px">📒 ປິດບັນຊີປະຈຳວັນ</div>
 <div id="closeClosedSummary" style="display:none"></div>
 <div id="closeFormArea">
@@ -2198,6 +2200,30 @@ function shiftDashMonth(delta){
   renderDashboard();
 }
 
+/* ມື້ທີ່ລົງບັນຊີແລ້ວ ແລະ ຍອດສົດ/ໂອນທີ່ລົງໄວ້ ຍັງກົງກັບຍອດຂາຍ+ລາຍຮັບຂອງມື້ນັ້ນ (ຖ້າມີການຂາຍເພີ່ມຫຼັງລົງບັນຊີ ຖືວ່າຍັງບໍ່ໄດ້ລົງ) */
+function closedDaySet(data, branchId){
+  var calc = {};
+  var add = function(d, c, t){ calc[d] = calc[d] || { cash: 0, transfer: 0 }; calc[d].cash += c; calc[d].transfer += t; };
+  (data.sales || []).forEach(function(s){
+    if (s.BranchID !== branchId) return;
+    if (s.PaymentType === 'split') add(s.Date, Number(s.CashAmount) || 0, Number(s.TransferAmount) || 0);
+    else if (s.PaymentType === 'cash') add(s.Date, Number(s.Total) || 0, 0);
+    else if (s.PaymentType === 'transfer') add(s.Date, 0, Number(s.Total) || 0);
+  });
+  (data.incomes || []).forEach(function(e){
+    if (e.BranchID !== branchId) return;
+    if (e.PaymentType === 'cash') add(e.Date, Number(e.Amount) || 0, 0);
+    else if (e.PaymentType === 'transfer') add(e.Date, 0, Number(e.Amount) || 0);
+  });
+  var out = {};
+  (data.closings || []).forEach(function(c){
+    if (c.BranchID !== branchId) return;
+    var m = calc[c.Date] || { cash: 0, transfer: 0 };
+    if (Math.round(Number(c.Cash) || 0) === Math.round(m.cash) && Math.round(Number(c.Transfer) || 0) === Math.round(m.transfer)) out[c.Date] = true;
+  });
+  return out;
+}
+
 function renderPeriodCards(){
   if (!STATE.sumPeriod || !STATE.sumPeriod.from) {
     var r0 = periodRange('today');
@@ -2208,10 +2234,17 @@ function renderPeriodCards(){
   $('sumPeriodLabel').textContent = '📊 ' + periodTypeLabel(period.type) + ' (' + rangeLabel + ')';
   var days = Math.max(2, daysBetweenStr(period.from, todayStr()) + 2);
   runCached('getRecentData', [days], function(data){
-    var inRange = function(dstr){ return dstr >= period.from && dstr <= period.to; };
+    var inRange0 = function(dstr){ return dstr >= period.from && dstr <= period.to; };
+    /* ມື້ທີ່ກົດ "ລົງບັນຊີ" ແລ້ວ (ແລະຍອດຍັງກົງກັນ) ບໍ່ນັບໃນກາດສະຫຼຸບ — ສະແດງແຕ່ມື້ທີ່ຍັງບໍ່ໄດ້ລົງບັນຊີ */
+    var closedDays = closedDaySet(data, STATE.currentBranch);
+    var hiddenDays = Object.keys(closedDays).filter(inRange0);
+    var inRange = function(dstr){ return inRange0(dstr) && !closedDays[dstr]; };
     var sales = (data.sales || []).filter(function(s){ return s.BranchID === STATE.currentBranch && inRange(s.Date); });
     var expenses = (data.expenses || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
     var incomes = (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
+    var note = $('sumClosedNote');
+    note.style.display = hiddenDays.length ? '' : 'none';
+    note.textContent = hiddenDays.length ? ('✅ ລົງບັນຊີແລ້ວ ' + hiddenDays.length + ' ມື້ — ບໍ່ນັບໃນກາດຂ້າງເທິງ (ເບິ່ງລາຍລະອຽດໃນຕາຕະລາງລຸ່ມ)') : '';
     var cash = 0, transfer = 0, expCash = 0, expTransfer = 0;
     sales.forEach(function(s){
       if (s.PaymentType === 'split') { cash += Number(s.CashAmount) || 0; transfer += Number(s.TransferAmount) || 0; }
@@ -2395,6 +2428,7 @@ function renderSummary(){
 
     var dayClosing = closingByDate[dayKey];
     var closeFormArea = $('closeFormArea');
+    $('closeSection').style.display = '';
     var closeClosedSummary = $('closeClosedSummary');
     if (dayClosing) {
       var closedMismatch = (Math.round(Number(dayClosing.Cash)) !== Math.round(dm.cash)) || (Math.round(Number(dayClosing.Transfer)) !== Math.round(dm.transfer));
@@ -2406,32 +2440,12 @@ function renderSummary(){
         closeFormArea.style.display = '';
         closeClosedSummary.style.display = 'none';
         closeClosedSummary.innerHTML = '';
-      } else if (STATE.closeFormOpenDate === dayKey) {
-        /* ຜູ້ໃຊ້ກົດ "ແກ້ໄຂ" ເພື່ອເປີດຟອມຄືນເອງ ທັ້ງໆທີ່ຂໍ້ມູນຍັງກົງກັນ */
-        $('closeCash').value = fmt(dayClosing.Cash);
-        $('closeTransfer').value = fmt(dayClosing.Transfer);
-        $('closeStatus').innerHTML = '✅ ປິດບັນຊີແລ້ວ ເວລາ ' + (dayClosing.ClosedTime || '') + ' — ກົດ "ລົງບັນຊີ" ອີກຄັ້ງຖ້າຕ້ອງການແກ້ໄຂ';
-        closeFormArea.style.display = '';
+      } else {
+        /* ລົງບັນຊີແລ້ວ ແລະຂໍ້ມູນຍັງກົງກັນ — ເຊື່ອງກ່ອງປິດບັນຊີທັງໝົດ ຈົນກວ່າຈະມີການຂາຍ/ແກ້ໄຂໃໝ່ເກີດຂຶ້ນ */
+        $('closeSection').style.display = 'none';
+        closeFormArea.style.display = 'none';
         closeClosedSummary.style.display = 'none';
         closeClosedSummary.innerHTML = '';
-      } else {
-        /* ປິດບັນຊີແລ້ວ ແລະຂໍ້ມູນຍັງກົງກັນ — ເຊື່ອງຟອມ/ຂໍ້ມູນທີ່ລົງບັນຊີໄປແລ້ວ ຈົນກວ່າຈະມີການຂາຍ/ແກ້ໄຂໃໝ່ເກີດຂຶ້ນ (ຫຼືກົດ "ແກ້ໄຂ" ເພື່ອເປີດຄືນເອງ) */
-        closeFormArea.style.display = 'none';
-        closeClosedSummary.style.display = '';
-        closeClosedSummary.innerHTML = '';
-        var line = document.createElement('div');
-        line.className = 'hint';
-        line.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
-        var txt = document.createElement('span');
-        txt.innerHTML = '✅ ປິດບັນຊີແລ້ວ ເວລາ ' + (dayClosing.ClosedTime || '') + ' · ເງິນສົດ ' + fmt(dayClosing.Cash) + ' · ເງິນໂອນ ' + fmt(dayClosing.Transfer);
-        var editBtn = document.createElement('button');
-        editBtn.type = 'button'; editBtn.className = 'btn ghost sm'; editBtn.textContent = 'ແກ້ໄຂ';
-        editBtn.addEventListener('click', function(){
-          STATE.closeFormOpenDate = dayKey;
-          renderSummary();
-        });
-        line.appendChild(txt); line.appendChild(editBtn);
-        closeClosedSummary.appendChild(line);
       }
     } else {
       $('closeCash').value = fmt(dm.cash);
