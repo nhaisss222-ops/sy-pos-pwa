@@ -27,7 +27,8 @@ font-family:"Noto Sans Lao","Noto Sans Lao UI","Phetsarath OT","Saysettha OT","S
 font-size:15px; line-height:1.55; padding-bottom:74px;
 }
 .wrap{max-width:1080px;margin:0 auto;padding:16px}
-.sticky-head{position:sticky;top:0;z-index:55;background:var(--bg);padding-top:16px;margin-top:-16px;padding-bottom:6px}
+.sticky-head{position:sticky;top:0;z-index:55;background:var(--bg);padding-top:8px;padding-bottom:6px;margin-top:4px}
+.sticky-head .tabs{margin-top:0}
 header.top{
 background:linear-gradient(135deg,#0f7a5a,#0b5f47); color:#fff;
 padding:9px 14px; border-radius:var(--radius); box-shadow:var(--shadow);
@@ -36,11 +37,11 @@ display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space
 header.top h1{margin:0;font-size:14.5px;font-weight:700;letter-spacing:.2px}
 .branch-pick{display:flex;gap:6px;flex-wrap:wrap}
 .branch-pick select{
-border:none;border-radius:8px;padding:6px 9px;font-family:inherit;font-size:12.5px;
+border:none;border-radius:10px;padding:6px 9px;font-family:inherit;font-size:12.5px;
 background:rgba(255,255,255,.16);color:#fff;
 }
 .branch-pick select option{color:#16211d}
-.tabs{display:flex;gap:6px;margin-top:12px;overflow-x:auto;padding-bottom:2px}
+.tabs{display:flex;gap:6px;margin-top:10px;overflow-x:auto;padding-bottom:2px}
 .tabs button{
 flex:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;
 font-family:inherit;font-size:13.5px;color:var(--muted);cursor:pointer;white-space:nowrap;
@@ -76,15 +77,18 @@ input:focus,select:focus,textarea:focus{outline:2px solid #0f7a5a33;border-color
 .pcard{position:relative;border:1px solid var(--line);border-radius:14px;padding:0;background:#fff;cursor:pointer;text-align:center;overflow:hidden;display:flex;flex-direction:column}
 .pcard:hover{border-color:var(--accent)}
 .pcard .thumb{position:relative;width:100%;aspect-ratio:1/1;object-fit:cover;margin:0;border-radius:0;background:#eef2f0;display:block}
-.pcard .info{padding:10px 10px 12px;background:#fff}
-.pcard .nm{font-size:14.5px;font-weight:700;line-height:1.3;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pcard .pr{font-size:16px;color:var(--accent);font-weight:800;margin-top:4px}
+.pcard{border-radius:14px}
+.pcard .info{padding:10px 10px 12px;background:#fff;display:flex;flex-direction:column;gap:2px;flex:1}
+.pcard .nm{font-size:14.5px;font-weight:700;line-height:1.25;color:var(--ink);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal;min-height:2.5em}
+.pcard .pr{font-size:16px;color:var(--accent);font-weight:800;margin-top:auto}
 .pcard .st{position:absolute;top:7px;right:7px;font-size:12px;color:#fff;background:rgba(10,20,16,.55);padding:3px 9px;border-radius:999px}
 .pcard .st.low{background:var(--out)}
 .pcard[disabled]{opacity:.45;cursor:not-allowed}
 /* ສິນຄ້າທີ່ບໍ່ມີຮູບ: ສະແດງເປັນກ່ອງສີເທົາລ້ວນ, ບໍ່ມີຮູບ/ໄອຄອນ, ມີແຕ່ຕົວໜັງສືກາງກ່ອງ */
 .pcard.noimg{background:#e4e8ea;aspect-ratio:1/1}
 .pcard.noimg .info{position:static;height:100%;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px;background:none}
+.pcard.noimg .nm{min-height:0}
+.pcard.noimg .pr{margin-top:0}
 .pcard.noimg .nm{color:#2a3338;white-space:normal}
 .pcard.noimg .pr{color:#51616a}
 .pcard.noimg .st{color:#2a3338;background:rgba(255,255,255,.65)}
@@ -127,6 +131,41 @@ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 .pay-opt.on{border-color:var(--accent);background:var(--accent-soft);font-weight:700;color:var(--accent)}
 .split-fields{display:none;gap:8px;margin:-6px 0 12px}
 .split-fields.show{display:grid;grid-template-columns:1fr 1fr}
+.settings-box h2{margin:18px 0 10px;font-size:15px;font-weight:700}
+.close-income{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.close-income .ci{background:var(--accent-soft);border-radius:10px;padding:10px 12px}
+.close-income .ci .k{font-size:12.5px;color:var(--muted)}
+.close-income .ci .v{font-size:17px;font-weight:800;color:var(--accent)}
+.close-income .hint{grid-column:1/-1;margin:0}
+/* ໜ້າກະຕ່າ: ໂຕໜັງສືໃຫຍ່ ອ່ານງ່າຍ ເຕັມຈໍ */
+#cartModal .box{max-width:640px;max-height:94vh;padding:20px 18px 24px;font-size:17px}
+#cartModal h3{font-size:20px;margin-bottom:12px}
+#cartModal .cart-line{padding:12px 0;gap:10px}
+#cartModal .cart-line .nm{font-size:17px;font-weight:600}
+#cartModal .cart-line .pr{font-size:14.5px;font-weight:400;margin-top:2px}
+#cartModal .qtybox{gap:8px}
+#cartModal .qtybox button{width:40px;height:40px;font-size:20px;border-radius:10px}
+#cartModal .qtybox span{min-width:28px;font-size:18px}
+#cartModal .icon-btn{font-size:18px;padding:6px 8px}
+#cartModal .row span{font-size:17px}
+#cartModal .tot{font-size:20px;font-weight:700;color:var(--accent)}
+#cartModal #modalTotal{font-size:24px;font-weight:800}
+#cartModal .fld{font-size:15px}
+#cartModal input,#cartModal select{font-size:17px;padding:12px}
+#cartModal .pay-opt{font-size:16px;padding:14px 4px}
+#cartModal .btn{font-size:17px;padding:14px 16px}
+/* ສ່ວນຫຼຸດແຕ່ລະເມນູ */
+.cart-item{border-bottom:1px solid var(--line);padding-bottom:10px}
+.cart-item .cart-line{border-bottom:none;padding-bottom:4px}
+.line-disc{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.line-disc .lbl{font-size:14.5px;color:var(--muted)}
+#cartModal .line-disc input{width:110px;padding:8px 10px;font-size:16px}
+.disc-type{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.disc-type button{border:none;background:#fff;padding:8px 12px;font-family:inherit;font-size:15px;cursor:pointer;color:var(--muted)}
+.disc-type button.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.line-disc .lt{margin-left:auto;text-align:right;font-size:16px;font-weight:700;white-space:nowrap}
+.line-disc .lt s{display:block;font-size:13px;font-weight:400;color:var(--muted)}
+.line-disc .lt.disc{color:var(--out)}
 
 /* tables */
 .tbl-scroll{overflow-x:auto}
@@ -197,31 +236,81 @@ details.inline summary::-webkit-details-marker{display:none}
 details.inline summary::after{content:'▸';font-size:11px}
 details.inline[open] summary::after{content:'▾'}
 details.inline .sec-body{padding:2px 12px 12px}
+/* ---------- ລັອກອິນ & ສິດ ---------- */
+.login-screen{position:fixed;inset:0;z-index:90;background:linear-gradient(160deg,#0f7a5a,#0b5f47 55%,#083f30);display:none;align-items:center;justify-content:center;padding:16px;overflow:auto}
+.login-screen.show{display:flex}
+.login-box{background:var(--card);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.28);padding:26px 22px 22px;width:100%;max-width:380px}
+.login-box .brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.login-box .brand img{width:46px;height:46px;border-radius:12px}
+.login-box h2{margin:0;font-size:19px}
+.login-box .sub{font-size:13px;color:var(--muted);margin-top:2px}
+.login-box label{display:block;font-size:13px;font-weight:600;margin:12px 0 5px}
+.login-box input{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;background:#fff}
+.login-box .btn{width:100%;margin-top:18px;padding:13px}
+.login-err{display:none;margin-top:12px;padding:9px 11px;border-radius:9px;background:#fdece4;color:#9a3412;font-size:13.5px}
+.login-err.show{display:block}
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:46px}
+.pw-wrap button{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;font-size:16px;padding:8px}
+.user-pick{display:flex;align-items:center;gap:6px;font-size:13px;flex:1 1 100%}
+.user-pick .who{background:rgba(255,255,255,.16);padding:7px 10px;border-radius:10px;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.user-pick button{border:none;border-radius:10px;padding:7px 10px;background:rgba(255,255,255,.16);color:#fff;cursor:pointer;font-family:inherit;font-size:13px}
+.user-pick button:hover{background:rgba(255,255,255,.26)}
+#logoutBtn{margin-left:auto}
+.role-tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.role-tag.staff{background:#eef2f0;color:var(--muted)}
+.role-tag.off{background:#fdece4;color:#9a3412}
+body.role-staff .owner-only{display:none !important}
+body:not(.role-admin) .admin-only{display:none !important}
 @media (max-width:600px){
 .wrap{padding:12px}
+.branch-pick{width:100%}
 .grid2{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
+<div class="login-screen" id="loginScreen">
+<form class="login-box" id="loginForm" autocomplete="on">
+<div class="brand"><img src="icon-192.png" alt=""><div><h2 id="loginTitle">ເຂົ້າສູ່ລະບົບ</h2><div class="sub" id="loginSub">ລະບົບ POS ຂາຍເຄື່ອງ</div></div></div>
+<div id="setupNameRow" style="display:none">
+<label for="loginName">ຊື່ຂອງທ່ານ</label>
+<input type="text" id="loginName" placeholder="ເຊັ່ນ: ໄຫ່">
+</div>
+<label for="loginUser">ຊື່ຜູ້ໃຊ້</label>
+<input type="text" id="loginUser" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="username">
+<label for="loginPass">ລະຫັດຜ່ານ</label>
+<div class="pw-wrap"><input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••"><button type="button" id="loginPassToggle" aria-label="ສະແດງລະຫັດຜ່ານ">👁️</button></div>
+<div class="hint" id="setupHint" style="display:none">ນີ້ແມ່ນບັນຊີ <b>ຜູ້ດູແລລະບົບ</b> ທຳອິດ — ເຫັນ ແລະ ຈັດການໄດ້ທຸກຮ້ານ. ລະຫັດຜ່ານຢ່າງໜ້ອຍ 6 ຕົວ.</div>
+<button type="submit" class="btn" id="loginBtn">ເຂົ້າສູ່ລະບົບ</button>
+<div class="login-err" id="loginErr"></div>
+</form>
+</div>
 <div class="wrap">
-<div class="sticky-head">
 <header class="top">
 <h1 id="shopTitle">🛍️ ຂາຍເຄື່ອງ</h1>
 <div class="branch-pick">
-<select id="shopSel"></select>
+<select id="shopSel" class="admin-only"></select>
 <select id="branchSel"></select>
+<div class="user-pick">
+<span class="who" id="userChip"></span>
+<button type="button" id="changePwBtn" title="ປ່ຽນລະຫັດຜ່ານ">🔑</button>
+<button type="button" id="settingsBtn" class="owner-only" title="ຕັ້ງຄ່າຮ້ານ, ສາຂາ & ບັນຊີ">⚙️</button>
+<button type="button" id="logoutBtn">ອອກ</button>
+</div>
 </div>
 </header>
-</div>
-
+<div class="sticky-head">
 <div class="tabs" id="tabs">
 <button class="on" data-tab="pos">🛒 ຂາຍເຄື່ອງ</button>
-<button data-tab="products">📦 ສິນຄ້າ</button>
+<button data-tab="products" class="owner-only">📦 ສິນຄ້າ</button>
 <button data-tab="summary">📊 ສະຫຼຸບ</button>
 <button data-tab="expenses">📒 ລົງບັນຊີ</button>
 <button data-tab="dashboard">📈 Dashboard</button>
 </div>
+</div>
+
+
 
 <!-- ===== POS ===== -->
 <section class="view on" id="view-pos">
@@ -319,38 +408,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 </div>
 </div>
 
-<details class="sec">
-<summary>⚙️ ຕັ້ງຄ່າຮ້ານ, ສາຂາ &amp; ພະນັກງານ</summary>
-<div class="sec-body">
-<h2>🏪 ຮ້ານ</h2>
-<div class="row">
-<input type="text" id="newShopName" placeholder="ຊື່ຮ້ານໃໝ່" style="max-width:260px">
-<button class="btn ghost sm" id="addShopBtn">➕ ເພີ່ມຮ້ານ</button>
-</div>
-<div class="tbl-scroll" style="margin-top:10px">
-<table><thead><tr><th>ຊື່ຮ້ານ</th><th></th></tr></thead><tbody id="shopBody"></tbody></table>
-</div>
 
-<h2 style="margin-top:20px">🏬 ສາຂາ (<span id="branchShopName"></span>)</h2>
-<div class="row">
-<input type="text" id="newBranchName" placeholder="ຊື່ສາຂາໃໝ່" style="max-width:260px">
-<button class="btn ghost sm" id="addBranchBtn">➕ ເພີ່ມສາຂາ</button>
-</div>
-<div class="tbl-scroll" style="margin-top:10px">
-<table><thead><tr><th>ຊື່ສາຂາ</th><th></th></tr></thead><tbody id="branchBody"></tbody></table>
-</div>
-
-<h2 style="margin-top:20px">👤 ພະນັກງານ (<span id="employeeShopName"></span>)</h2>
-<div class="hint" style="margin:0 0 8px">ເພີ່ມລາຍຊື່ພະນັກງານເພື່ອເລືອກຕອນຂາຍ ແລະ ເບິ່ງຍອດຂາຍແຍກຕາມຄົນຢູ່ໜ້າສະຫຼຸບ</div>
-<div class="row">
-<input type="text" id="newEmployeeName" placeholder="ຊື່ພະນັກງານໃໝ່" style="max-width:260px">
-<button class="btn ghost sm" id="addEmployeeBtn">➕ ເພີ່ມພະນັກງານ</button>
-</div>
-<div class="tbl-scroll" style="margin-top:10px">
-<table><thead><tr><th>ຊື່ພະນັກງານ</th><th></th></tr></thead><tbody id="employeeBody"></tbody></table>
-</div>
-</div>
-</details>
 </div>
 
 <div id="prodCategorySection" style="display:none">
@@ -469,12 +527,14 @@ details.inline .sec-body{padding:2px 12px 12px}
 <button type="button" class="btn ghost" id="sumPeriodBtn" style="padding:8px 14px;flex:0 0 auto">🗓️ ເລືອກໄລຍະເວລາ</button>
 </div>
 <div class="cards" id="sumCards"></div>
+<div class="hint" id="sumClosedNote" style="margin:-4px 0 10px;display:none"></div>
 <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:8px" id="sumDayLabel"></div>
-<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:14px">
+<div id="closeSection" style="border-top:1px solid var(--line);margin-top:12px;padding-top:14px">
 <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:10px">📒 ປິດບັນຊີປະຈຳວັນ</div>
 <div id="closeClosedSummary" style="display:none"></div>
 <div id="closeFormArea">
-<div class="grid2">
+<div id="closeIncomeInfo" class="close-income"></div>
+<div class="grid2" style="display:none">
 <label class="fld">ຮັບເງິນສົດ (ນັບຕົວຈິງ)
 <input type="text" id="closeCash" inputmode="decimal" placeholder="0">
 </label>
@@ -482,7 +542,7 @@ details.inline .sec-body{padding:2px 12px 12px}
 <input type="text" id="closeTransfer" inputmode="decimal" placeholder="0">
 </label>
 </div>
-<div class="hint" style="margin:14px 0 0;font-weight:700;color:var(--ink)">➖ ລາຍຈ່າຍ (ບໍ່ຈຳເປັນ — ກົດ "ບັນທຶກລາຍຈ່າຍ" ໄດ້ຫຼາຍລາຍການກ່ອນຈະລົງບັນຊີ)</div>
+<div class="hint" style="margin:12px 0 0;font-weight:700;color:var(--ink)">➖ ລາຍຈ່າຍ (ບໍ່ຈຳເປັນ — ກົດ "ບັນທຶກລາຍຈ່າຍ" ໄດ້ຫຼາຍລາຍການກ່ອນຈະລົງບັນຊີ)</div>
 <div class="grid2" style="margin-top:8px">
 <label class="fld">ໝວດລາຍຈ່າຍ
 <select id="closeExpCategory"></select>
@@ -584,14 +644,14 @@ details.inline .sec-body{padding:2px 12px 12px}
 <span style="font-weight:600">ລວມຍ່ອຍ</span>
 <span class="tot" id="modalSubtotal">0 ກີບ</span>
 </div>
-<label class="fld" style="margin-top:8px">🏷️ ສ່ວນຫຼຸດ (ກີບ)
+<label class="fld" style="margin-top:8px">🏷️ ສ່ວນຫຼຸດທັງບິນ (ກີບ)
 <input type="text" id="cartDiscount" inputmode="decimal" placeholder="0">
 </label>
 <div class="row" style="justify-content:space-between;margin-top:6px">
 <span style="font-weight:700">ລວມທັງໝົດ</span>
 <span class="tot" id="modalTotal">0 ກີບ</span>
 </div>
-<div style="font-size:12.5px;color:var(--muted);margin-top:10px">ປະເພດການຮັບເງິນ</div>
+<div style="font-size:15px;color:var(--muted);margin-top:12px">ປະເພດການຮັບເງິນ</div>
 <div class="pay-grid">
 <div class="pay-opt on" id="payCash" data-v="cash">💵 ເງິນສົດ</div>
 <div class="pay-opt" id="payTransfer" data-v="transfer">🏦 ເງິນໂອນ</div>
@@ -618,6 +678,64 @@ details.inline .sec-body{padding:2px 12px 12px}
 <button class="btn ghost" id="closeCartBtn">ປິດ</button>
 <button class="btn ghost" id="holdBillBtn" style="flex:1">📝 ບັນທຶກລໍຖ້າ</button>
 <button class="btn" id="checkoutBtn" style="flex:1">✅ ຢືນຢັນການຂາຍ</button>
+</div>
+</div>
+</div>
+
+<!-- ===== SETTINGS MODAL (ຕັ້ງຄ່າຮ້ານ, ສາຂາ, ພະນັກງານ & ບັນຊີ) ===== -->
+<div class="modal" id="settingsModal">
+<div class="box lg settings-box">
+<div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+<h3 style="margin:0">⚙️ ຕັ້ງຄ່າຮ້ານ, ສາຂາ, ພະນັກງານ &amp; ບັນຊີ</h3>
+<button type="button" class="icon-btn" id="closeSettingsX" aria-label="ປິດ" style="font-size:20px">✕</button>
+</div>
+<h2>🏪 ຮ້ານ</h2>
+<div class="row admin-only">
+<input type="text" id="newShopName" placeholder="ຊື່ຮ້ານໃໝ່" style="max-width:260px">
+<button class="btn ghost sm" id="addShopBtn">➕ ເພີ່ມຮ້ານ</button>
+</div>
+<div class="tbl-scroll" style="margin-top:10px">
+<table><thead><tr><th>ຊື່ຮ້ານ</th><th></th></tr></thead><tbody id="shopBody"></tbody></table>
+</div>
+
+<h2 style="margin-top:20px">🏬 ສາຂາ (<span id="branchShopName"></span>)</h2>
+<div class="row">
+<input type="text" id="newBranchName" placeholder="ຊື່ສາຂາໃໝ່" style="max-width:260px">
+<button class="btn ghost sm" id="addBranchBtn">➕ ເພີ່ມສາຂາ</button>
+</div>
+<div class="tbl-scroll" style="margin-top:10px">
+<table><thead><tr><th>ຊື່ສາຂາ</th><th></th></tr></thead><tbody id="branchBody"></tbody></table>
+</div>
+
+<h2 style="margin-top:20px">👤 ພະນັກງານ (<span id="employeeShopName"></span>)</h2>
+<div class="hint" style="margin:0 0 8px">ເພີ່ມລາຍຊື່ພະນັກງານເພື່ອເລືອກຕອນຂາຍ ແລະ ເບິ່ງຍອດຂາຍແຍກຕາມຄົນຢູ່ໜ້າສະຫຼຸບ</div>
+<div class="row">
+<input type="text" id="newEmployeeName" placeholder="ຊື່ພະນັກງານໃໝ່" style="max-width:260px">
+<button class="btn ghost sm" id="addEmployeeBtn">➕ ເພີ່ມພະນັກງານ</button>
+</div>
+<div class="tbl-scroll" style="margin-top:10px">
+<table><thead><tr><th>ຊື່ພະນັກງານ</th><th></th></tr></thead><tbody id="employeeBody"></tbody></table>
+</div>
+
+<h2 style="margin-top:20px">🔐 ບັນຊີເຂົ້າໃຊ້ແອັບ</h2>
+<div class="hint" style="margin:0 0 8px"><b>ເຈົ້າຂອງຮ້ານ</b>: ຈັດການໄດ້ທຸກຢ່າງໃນຮ້ານ. <b>ພະນັກງານ</b>: ຂາຍ, ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ, ປິດບັນຊີ — ບໍ່ສາມາດແກ້ສິນຄ້າ, ຕັ້ງຄ່າ ຫຼື ຍົກເລີກບິນ.</div>
+<div class="grid2" style="gap:8px">
+<input type="text" id="nuName" placeholder="ຊື່ (ເຊັ່ນ: ສົມ)">
+<input type="text" id="nuUser" placeholder="ຊື່ຜູ້ໃຊ້ (ອັງກິດ, ເຊັ່ນ: som)" autocapitalize="none" spellcheck="false">
+<input type="text" id="nuPass" placeholder="ລະຫັດຜ່ານ (ຢ່າງໜ້ອຍ 6 ຕົວ)" autocomplete="new-password">
+<select id="nuRole">
+<option value="staff">ພະນັກງານ</option>
+<option value="owner">ເຈົ້າຂອງຮ້ານ</option>
+<option value="admin" class="admin-only">ຜູ້ດູແລລະບົບ (ທຸກຮ້ານ)</option>
+</select>
+<select id="nuShop" class="admin-only"></select>
+</div>
+<div class="row" style="margin-top:8px"><button class="btn ghost sm" id="addUserBtn">➕ ເພີ່ມບັນຊີ</button></div>
+<div class="tbl-scroll" style="margin-top:10px">
+<table><thead><tr><th>ຊື່</th><th>ຊື່ຜູ້ໃຊ້</th><th>ສິດ</th><th></th></tr></thead><tbody id="userBody"></tbody></table>
+</div>
+<div class="row" style="margin-top:16px">
+<button class="btn ghost" id="closeSettingsBtn" style="flex:1">ປິດ</button>
 </div>
 </div>
 </div>
@@ -782,12 +900,13 @@ function run(fnName, args, onOk, onFail){
   fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ fn: fnName, args: args || [] })
+    body: JSON.stringify({ fn: fnName, args: args || [], token: SESSION ? SESSION.token : '' })
   })
     .then(function(r){ return r.json(); })
     .then(function(res){
       setBusy(false);
       if (res && res.ok) { if (onOk) onOk(res.result); }
+      else if (res && res.auth) { endSession(); showLogin(res.error); if (onFail) onFail(res.error); }
       else { var msg = (res && res.error) || 'ມີຂໍ້ຜິດພາດ'; toast('❌ ' + msg); if (onFail) onFail(msg); }
     })
     .catch(function(err){
@@ -878,6 +997,8 @@ $('shopSel').addEventListener('change', function(){
   renderShops();
   renderTodaySales();
   renderHeldChip();
+  renderUserShopSelect();
+  if ($('settingsModal').classList.contains('show')) renderUsers();
   $('expBranchLabel').textContent = branchName(STATE.currentBranch);
   $('incBranchLabel').textContent = branchName(STATE.currentBranch);
 });
@@ -915,6 +1036,7 @@ $('branchSel').addEventListener('change', function(){
 
 /* ---------- boot ---------- */
 function onBoot(data){
+  if (data.me && SESSION) { SESSION.user = data.me; saveSession(); applyRole(); }
   STATE.shops = data.shops || [];
   STATE.branches = data.branches || [];
   STATE.products = data.products || [];
@@ -927,8 +1049,9 @@ function onBoot(data){
   renderShopSelect();
   renderBranchSelect();
 
+  renderUserShopSelect();
   if (!STATE.shops.length) {
-    toast('ກະລຸນາເພີ່ມຮ້ານກ່ອນ ທີ່ແຖບ 📦 ສິນຄ້າ');
+    toast(isAdmin() ? 'ກະລຸນາເພີ່ມຮ້ານກ່ອນ ທີ່ແຖບ 📦 ສິນຄ້າ' : 'ບັນຊີນີ້ຍັງບໍ່ໄດ້ຜູກກັບຮ້ານ');
   } else if (!shopBranches().length) {
     toast('ກະລຸນາເພີ່ມສາຂາກ່ອນ ທີ່ແຖບ 📦 ສິນຄ້າ');
   }
@@ -967,14 +1090,15 @@ function monthStr(){
 }
 
 var BOOTSTRAP_CACHE_KEY = 'syposBootstrapCacheV1';
+function bootstrapCacheKey(){ return BOOTSTRAP_CACHE_KEY + ':' + (SESSION ? SESSION.user.id : ''); }
 function loadCachedBootstrap(){
   try {
-    var raw = localStorage.getItem(BOOTSTRAP_CACHE_KEY);
+    var raw = localStorage.getItem(bootstrapCacheKey());
     return raw ? JSON.parse(raw) : null;
   } catch (e) { return null; }
 }
 function saveCachedBootstrap(data){
-  try { localStorage.setItem(BOOTSTRAP_CACHE_KEY, JSON.stringify(data)); } catch (e) {}
+  try { localStorage.setItem(bootstrapCacheKey(), JSON.stringify(data)); } catch (e) {}
 }
 
 function reloadAll(after){
@@ -1094,8 +1218,8 @@ $('closeDayBtn').addEventListener('click', function(){
   var payload = {
     branchId: STATE.currentBranch,
     date: dateStr,
-    cash: parseAmount($('closeCash').value),
-    transfer: parseAmount($('closeTransfer').value)
+    cash: (STATE.closeDayCalc && STATE.closeDayCalc.cash) || 0,
+    transfer: (STATE.closeDayCalc && STATE.closeDayCalc.transfer) || 0
   };
   var expAmount = parseAmount($('closeExpAmount').value);
   function finishClose(){
@@ -1214,9 +1338,21 @@ function addToCart(p){
   toast('➕ ' + p.Name);
 }
 
+/* ສ່ວນຫຼຸດແຕ່ລະເມນູ: discType 'kip' (ກີບ ຕໍ່ລາຍການນັ້ນທັງໝົດ) ຫຼື 'pct' (%), ບໍ່ໃຫ້ເກີນຍອດຂອງລາຍການນັ້ນ */
+function lineGross(l){ return (Number(l.qty) || 0) * (Number(l.price) || 0); }
+function lineDiscount(l){
+  var g = lineGross(l), v = Number(l.discVal) || 0;
+  if (v <= 0) return 0;
+  var d = l.discType === 'pct' ? Math.round(g * Math.min(v, 100) / 100) : v;
+  return d > g ? g : d;
+}
+function cartLineDiscountTotal(){
+  return STATE.cart.reduce(function(s, l){ return s + lineDiscount(l); }, 0);
+}
+/* ລວມຍ່ອຍ = ຍອດທຸກລາຍການ ຫຼັງຫັກສ່ວນຫຼຸດແຕ່ລະເມນູແລ້ວ */
 function cartTotal(){
   var t = 0;
-  STATE.cart.forEach(function(l){ t += l.qty * l.price; });
+  STATE.cart.forEach(function(l){ t += lineGross(l) - lineDiscount(l); });
   return t;
 }
 
@@ -1232,18 +1368,34 @@ function finalCartTotal(){
   return cartTotal() - cartDiscount();
 }
 
-function renderCart(){
+/* ອັບເດດສະເພາະຕົວເລກ (ບໍ່ສ້າງລາຍການໃໝ່) — ໃຊ້ຕອນພິມສ່ວນຫຼຸດ ເພື່ອບໍ່ໃຫ້ຊ່ອງພິມເສຍ focus */
+function updateCartTotals(){
   var count = STATE.cart.reduce(function(s, l){ return s + l.qty; }, 0);
   $('cartBar').style.display = count ? 'flex' : 'none';
   $('cartCount').textContent = count + ' ລາຍການ';
   $('cartTotal').textContent = fmt(finalCartTotal()) + ' ກີບ';
   $('modalSubtotal').textContent = fmt(cartTotal()) + ' ກີບ';
   $('modalTotal').textContent = fmt(finalCartTotal()) + ' ກີບ';
+  document.querySelectorAll('#cartLines .lt').forEach(function(el){
+    var l = STATE.cart[Number(el.getAttribute('data-idx'))];
+    if (!l) return;
+    var d = lineDiscount(l), g = lineGross(l);
+    el.className = 'lt' + (d ? ' disc' : '');
+    el.innerHTML = (d ? '<s>' + fmt(g) + '</s>' : '') + fmt(g - d) + ' ກີບ';
+  });
+  if (payType === 'split' && document.activeElement !== $('splitCashAmount') && document.activeElement !== $('splitTransferAmount')) {
+    $('splitCashAmount').value = fmt(finalCartTotal());
+    $('splitTransferAmount').value = fmt(0);
+  }
+}
 
+function renderCart(){
   var box = $('cartLines');
   box.innerHTML = '';
   $('cartEmptyMsg').style.display = STATE.cart.length ? 'none' : 'block';
   STATE.cart.forEach(function(l, idx){
+    var item = document.createElement('div');
+    item.className = 'cart-item';
     var row = document.createElement('div');
     row.className = 'cart-line';
     row.innerHTML = '<div class="nm">' + escapeHtml(l.name) + '<div class="pr">' + fmt(l.price) + ' ກີບ/' + (l.unit || 'ອັນ') + '</div></div>' +
@@ -1252,8 +1404,43 @@ function renderCart(){
     row.querySelector('[data-a="inc"]').addEventListener('click', function(){ STATE.cart[idx].qty += 1; renderCart(); });
     row.querySelector('[data-a="dec"]').addEventListener('click', function(){ STATE.cart[idx].qty -= 1; if (STATE.cart[idx].qty <= 0) STATE.cart.splice(idx, 1); renderCart(); });
     row.querySelector('[data-a="rm"]').addEventListener('click', function(){ STATE.cart.splice(idx, 1); renderCart(); });
-    box.appendChild(row);
+    item.appendChild(row);
+
+    var type = l.discType === 'pct' ? 'pct' : 'kip';
+    var disc = document.createElement('div');
+    disc.className = 'line-disc';
+    disc.innerHTML = '<span class="lbl">🏷️ ຫຼຸດ</span>' +
+      '<input type="text" inputmode="decimal" placeholder="0" value="' + (Number(l.discVal) ? (type === 'pct' ? l.discVal : fmt(l.discVal)) : '') + '">' +
+      '<span class="disc-type"><button type="button" data-t="kip" class="' + (type === 'kip' ? 'on' : '') + '">ກີບ</button><button type="button" data-t="pct" class="' + (type === 'pct' ? 'on' : '') + '">%</button></span>' +
+      '<span class="lt" data-idx="' + idx + '"></span>';
+    var inp = disc.querySelector('input');
+    inp.addEventListener('input', function(e){
+      var line = STATE.cart[idx];
+      if (line.discType === 'pct') {
+        var v = parseFloat(inp.value.replace(/,/g, '')) || 0;
+        if (v > 100) { v = 100; inp.value = '100'; }
+        line.discVal = v;
+      } else {
+        liveFormatAmount(e);
+        line.discVal = parseAmount(inp.value);
+      }
+      updateCartTotals();
+    });
+    inp.addEventListener('blur', function(e){ if (STATE.cart[idx] && STATE.cart[idx].discType !== 'pct') finalizeFormatAmount(e); });
+    disc.querySelectorAll('.disc-type button').forEach(function(b){
+      b.addEventListener('click', function(){
+        var line = STATE.cart[idx];
+        var t = b.getAttribute('data-t');
+        if (line.discType === t || (!line.discType && t === 'kip')) return;
+        line.discType = t;
+        line.discVal = 0;
+        renderCart();
+      });
+    });
+    item.appendChild(disc);
+    box.appendChild(item);
   });
+  updateCartTotals();
 }
 
 $('openCartBtn').addEventListener('click', function(){ $('cartModal').classList.add('show'); });
@@ -1307,7 +1494,7 @@ function renderHeldBillsModal(){
 function resumeHeldBill(h){
   if (STATE.cart.length && !window.confirm('ກະຕ່າປັດຈຸບັນຍັງມີລາຍການຢູ່ — ດຶງບິນນີ້ມາຈະທັບກະຕ່າເກົ່າ. ແທ້ບໍ?')) return;
   STATE.cart = (h.Items || []).map(function(it){
-    return { productId: it.productId, name: it.name, price: Number(it.price) || 0, qty: Number(it.qty) || 0, unit: it.unit || '' };
+    return { productId: it.productId, name: it.name, price: Number(it.price) || 0, qty: Number(it.qty) || 0, unit: it.unit || '', discVal: Number(it.discVal) || 0, discType: it.discType || 'kip' };
   });
   STATE.resumingHeldBillId = h.ID;
   $('holdCustomerName').value = h.CustomerName || '';
@@ -1320,7 +1507,7 @@ function resumeHeldBill(h){
 $('holdBillBtn').addEventListener('click', function(){
   if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
   if (!STATE.cart.length) { toast('❌ ກະຕ່າວ່າງເປົ່າ'); return; }
-  var items = STATE.cart.map(function(l){ return { productId: l.productId, name: l.name, qty: l.qty, price: l.price, unit: l.unit || '' }; });
+  var items = STATE.cart.map(function(l){ return { productId: l.productId, name: l.name, qty: l.qty, price: l.price, unit: l.unit || '', discVal: Number(l.discVal) || 0, discType: l.discType || 'kip' }; });
   var payload = { branchId: STATE.currentBranch, customerName: $('holdCustomerName').value || '', items: items, note: $('saleNote').value || '' };
   run('holdBill', [payload], function(res){
     toast('✅ ບັນທຶກບິນລໍຖ້າແລ້ວ ' + fmt(res.total) + ' ກີບ');
@@ -1375,8 +1562,14 @@ attachAmountFormatting(['pPrice','pStockQty','pMinStock','iAmount','eAmount','cl
 $('checkoutBtn').addEventListener('click', function(){
   if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
   if (!STATE.cart.length) { toast('❌ ກະຕ່າວ່າງເປົ່າ'); return; }
-  var items = STATE.cart.map(function(l){ return { productId: l.productId, name: l.name, qty: l.qty, price: l.price }; });
-  var discount = cartDiscount();
+  var items = STATE.cart.map(function(l){
+    var d = lineDiscount(l);
+    var nm = l.name;
+    if (d) nm += ' (ຫຼຸດ ' + (l.discType === 'pct' ? (l.discVal + '% = ') : '') + fmt(d) + ' ກີບ)';
+    return { productId: l.productId, name: nm, qty: l.qty, price: l.price };
+  });
+  /* backend ຄິດ Total = ລາຄາເຕັມ − discount, ສະນັ້ນສົ່ງສ່ວນຫຼຸດແຕ່ລະເມນູ + ສ່ວນຫຼຸດທັງບິນ ລວມກັນ */
+  var discount = cartLineDiscountTotal() + cartDiscount();
   var sale = { branchId: STATE.currentBranch, paymentType: payType, items: items, note: $('saleNote').value || '', employeeId: $('saleEmployee').value || '', discount: discount };
   if (payType === 'split') {
     var cashAmt = parseAmount($('splitCashAmount').value);
@@ -1452,7 +1645,7 @@ function renderPaidBillsModal(rows, itemsBySale){
       '<div class="tot">' + fmt(s.Total) + '</div>';
     line.addEventListener('click', function(){ showSaleDetail(s, items); });
     var delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn'; delBtn.textContent = '🗑️';
+    delBtn.className = 'icon-btn owner-only'; delBtn.textContent = '🗑️';
     delBtn.addEventListener('click', function(ev){
       ev.stopPropagation();
       confirmVoid(s.ID, s.BranchID, items, function(){ $('paidBillsModal').classList.remove('show'); });
@@ -1906,7 +2099,7 @@ function renderExpenses(){
         tr.addEventListener('click', function(){ showSaleDetail(r.sale, r.items); });
       } else if (r.type === 'income') {
         var incBtn = document.createElement('button');
-        incBtn.className = 'icon-btn'; incBtn.textContent = '🗑️';
+        incBtn.className = 'icon-btn owner-only'; incBtn.textContent = '🗑️';
         incBtn.addEventListener('click', function(ev){
           ev.stopPropagation();
           if (!window.confirm('ລຶບລາຍຮັບນີ້?')) return;
@@ -1915,7 +2108,7 @@ function renderExpenses(){
         td.appendChild(incBtn);
       } else {
         var expBtn = document.createElement('button');
-        expBtn.className = 'icon-btn'; expBtn.textContent = '🗑️';
+        expBtn.className = 'icon-btn owner-only'; expBtn.textContent = '🗑️';
         expBtn.addEventListener('click', function(ev){
           ev.stopPropagation();
           if (!window.confirm('ລຶບລາຍຈ່າຍນີ້?')) return;
@@ -2004,6 +2197,30 @@ function shiftDashMonth(delta){
   renderDashboard();
 }
 
+/* ມື້ທີ່ລົງບັນຊີແລ້ວ ແລະ ຍອດສົດ/ໂອນທີ່ລົງໄວ້ ຍັງກົງກັບຍອດຂາຍ+ລາຍຮັບຂອງມື້ນັ້ນ (ຖ້າມີການຂາຍເພີ່ມຫຼັງລົງບັນຊີ ຖືວ່າຍັງບໍ່ໄດ້ລົງ) */
+function closedDaySet(data, branchId){
+  var calc = {};
+  var add = function(d, c, t){ calc[d] = calc[d] || { cash: 0, transfer: 0 }; calc[d].cash += c; calc[d].transfer += t; };
+  (data.sales || []).forEach(function(s){
+    if (s.BranchID !== branchId) return;
+    if (s.PaymentType === 'split') add(s.Date, Number(s.CashAmount) || 0, Number(s.TransferAmount) || 0);
+    else if (s.PaymentType === 'cash') add(s.Date, Number(s.Total) || 0, 0);
+    else if (s.PaymentType === 'transfer') add(s.Date, 0, Number(s.Total) || 0);
+  });
+  (data.incomes || []).forEach(function(e){
+    if (e.BranchID !== branchId) return;
+    if (e.PaymentType === 'cash') add(e.Date, Number(e.Amount) || 0, 0);
+    else if (e.PaymentType === 'transfer') add(e.Date, 0, Number(e.Amount) || 0);
+  });
+  var out = {};
+  (data.closings || []).forEach(function(c){
+    if (c.BranchID !== branchId) return;
+    var m = calc[c.Date] || { cash: 0, transfer: 0 };
+    if (Math.round(Number(c.Cash) || 0) === Math.round(m.cash) && Math.round(Number(c.Transfer) || 0) === Math.round(m.transfer)) out[c.Date] = true;
+  });
+  return out;
+}
+
 function renderPeriodCards(){
   if (!STATE.sumPeriod || !STATE.sumPeriod.from) {
     var r0 = periodRange('today');
@@ -2014,10 +2231,17 @@ function renderPeriodCards(){
   $('sumPeriodLabel').textContent = '📊 ' + periodTypeLabel(period.type) + ' (' + rangeLabel + ')';
   var days = Math.max(2, daysBetweenStr(period.from, todayStr()) + 2);
   runCached('getRecentData', [days], function(data){
-    var inRange = function(dstr){ return dstr >= period.from && dstr <= period.to; };
+    var inRange0 = function(dstr){ return dstr >= period.from && dstr <= period.to; };
+    /* ມື້ທີ່ກົດ "ລົງບັນຊີ" ແລ້ວ (ແລະຍອດຍັງກົງກັນ) ບໍ່ນັບໃນກາດສະຫຼຸບ — ສະແດງແຕ່ມື້ທີ່ຍັງບໍ່ໄດ້ລົງບັນຊີ */
+    var closedDays = closedDaySet(data, STATE.currentBranch);
+    var hiddenDays = Object.keys(closedDays).filter(inRange0);
+    var inRange = function(dstr){ return inRange0(dstr) && !closedDays[dstr]; };
     var sales = (data.sales || []).filter(function(s){ return s.BranchID === STATE.currentBranch && inRange(s.Date); });
     var expenses = (data.expenses || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
     var incomes = (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
+    var note = $('sumClosedNote');
+    note.style.display = hiddenDays.length ? '' : 'none';
+    note.textContent = hiddenDays.length ? ('✅ ລົງບັນຊີແລ້ວ ' + hiddenDays.length + ' ມື້ — ບໍ່ນັບໃນກາດຂ້າງເທິງ (ເບິ່ງລາຍລະອຽດໃນຕາຕະລາງລຸ່ມ)') : '';
     var cash = 0, transfer = 0, expCash = 0, expTransfer = 0;
     sales.forEach(function(s){
       if (s.PaymentType === 'split') { cash += Number(s.CashAmount) || 0; transfer += Number(s.TransferAmount) || 0; }
@@ -2193,9 +2417,15 @@ function renderSummary(){
     $('sumEmpty').style.display = keys.length ? 'none' : 'block';
 
     var dm = map[dayKey] || { cash: 0, transfer: 0, exp: 0 };
+    /* ຮັບເງິນ = ຄຳນວນຈາກຍອດຂາຍ/ລາຍຮັບອັດຕະໂນມັດ (ບໍ່ຕ້ອງພິມ) — ລົງບັນຊີດ້ວຍຕົວເລກນີ້ສະເໝີ */
+    STATE.closeDayCalc = { cash: dm.cash, transfer: dm.transfer };
+    $('closeIncomeInfo').innerHTML = '<div class="ci"><div class="k">💵 ຮັບເງິນສົດ</div><div class="v">' + fmt(dm.cash) + ' ກີບ</div></div>' +
+      '<div class="ci"><div class="k">🏦 ຮັບເງິນໂອນ</div><div class="v">' + fmt(dm.transfer) + ' ກີບ</div></div>' +
+      '<div class="hint">ຄຳນວນອັດຕະໂນມັດຈາກຍອດຂາຍ ແລະ ລາຍຮັບຂອງມື້ນີ້</div>';
 
     var dayClosing = closingByDate[dayKey];
     var closeFormArea = $('closeFormArea');
+    $('closeSection').style.display = '';
     var closeClosedSummary = $('closeClosedSummary');
     if (dayClosing) {
       var closedMismatch = (Math.round(Number(dayClosing.Cash)) !== Math.round(dm.cash)) || (Math.round(Number(dayClosing.Transfer)) !== Math.round(dm.transfer));
@@ -2207,32 +2437,12 @@ function renderSummary(){
         closeFormArea.style.display = '';
         closeClosedSummary.style.display = 'none';
         closeClosedSummary.innerHTML = '';
-      } else if (STATE.closeFormOpenDate === dayKey) {
-        /* ຜູ້ໃຊ້ກົດ "ແກ້ໄຂ" ເພື່ອເປີດຟອມຄືນເອງ ທັ້ງໆທີ່ຂໍ້ມູນຍັງກົງກັນ */
-        $('closeCash').value = fmt(dayClosing.Cash);
-        $('closeTransfer').value = fmt(dayClosing.Transfer);
-        $('closeStatus').innerHTML = '✅ ປິດບັນຊີແລ້ວ ເວລາ ' + (dayClosing.ClosedTime || '') + ' — ກົດ "ລົງບັນຊີ" ອີກຄັ້ງຖ້າຕ້ອງການແກ້ໄຂ';
-        closeFormArea.style.display = '';
+      } else {
+        /* ລົງບັນຊີແລ້ວ ແລະຂໍ້ມູນຍັງກົງກັນ — ເຊື່ອງກ່ອງປິດບັນຊີທັງໝົດ ຈົນກວ່າຈະມີການຂາຍ/ແກ້ໄຂໃໝ່ເກີດຂຶ້ນ */
+        $('closeSection').style.display = 'none';
+        closeFormArea.style.display = 'none';
         closeClosedSummary.style.display = 'none';
         closeClosedSummary.innerHTML = '';
-      } else {
-        /* ປິດບັນຊີແລ້ວ ແລະຂໍ້ມູນຍັງກົງກັນ — ເຊື່ອງຟອມ/ຂໍ້ມູນທີ່ລົງບັນຊີໄປແລ້ວ ຈົນກວ່າຈະມີການຂາຍ/ແກ້ໄຂໃໝ່ເກີດຂຶ້ນ (ຫຼືກົດ "ແກ້ໄຂ" ເພື່ອເປີດຄືນເອງ) */
-        closeFormArea.style.display = 'none';
-        closeClosedSummary.style.display = '';
-        closeClosedSummary.innerHTML = '';
-        var line = document.createElement('div');
-        line.className = 'hint';
-        line.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
-        var txt = document.createElement('span');
-        txt.innerHTML = '✅ ປິດບັນຊີແລ້ວ ເວລາ ' + (dayClosing.ClosedTime || '') + ' · ເງິນສົດ ' + fmt(dayClosing.Cash) + ' · ເງິນໂອນ ' + fmt(dayClosing.Transfer);
-        var editBtn = document.createElement('button');
-        editBtn.type = 'button'; editBtn.className = 'btn ghost sm'; editBtn.textContent = 'ແກ້ໄຂ';
-        editBtn.addEventListener('click', function(){
-          STATE.closeFormOpenDate = dayKey;
-          renderSummary();
-        });
-        line.appendChild(txt); line.appendChild(editBtn);
-        closeClosedSummary.appendChild(line);
       }
     } else {
       $('closeCash').value = fmt(dm.cash);
@@ -2488,8 +2698,171 @@ function renderDashboardChart(map){
   box.innerHTML = '<div class="hint">↔️ ເລື່ອນເບິ່ງໄດ້ · ສີຂຽວ=ລາຍຮັບ ສີແດງ=ລາຍຈ່າຍ</div><div class="tbl-scroll">' + svg + '</div>';
 }
 
+/* ---------- ລັອກອິນ / ບັນຊີຜູ້ໃຊ້ ---------- */
+var SESSION_KEY = 'syposSessionV1';
+var SESSION = null;
+try { SESSION = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { SESSION = null; }
+var LOGIN_MODE = 'login';
+var ROLE_LABEL = { admin: 'ຜູ້ດູແລລະບົບ', owner: 'ເຈົ້າຂອງຮ້ານ', staff: 'ພະນັກງານ' };
+
+function saveSession(){ try { localStorage.setItem(SESSION_KEY, JSON.stringify(SESSION)); } catch (e) {} }
+function isAdmin(){ return !!(SESSION && SESSION.user.role === 'admin'); }
+function isOwner(){ return !!(SESSION && (SESSION.user.role === 'owner' || SESSION.user.role === 'admin')); }
+
+/** ລຶບ session ແລະ ຂໍ້ມູນທີ່ແຄັດໄວ້ໃນເຄື່ອງ ເພື່ອບໍ່ໃຫ້ຄົນຕໍ່ໄປທີ່ໃຊ້ເຄື່ອງນີ້ເຫັນຂໍ້ມູນ */
+function endSession(){
+  try {
+    Object.keys(localStorage).forEach(function(k){ if (k.indexOf(BOOTSTRAP_CACHE_KEY) === 0) localStorage.removeItem(k); });
+    localStorage.removeItem(SESSION_KEY);
+  } catch (e) {}
+  SESSION = null;
+  invalidateDataCache();
+}
+
+function applyRole(){
+  var role = SESSION ? SESSION.user.role : '';
+  document.body.classList.remove('role-admin', 'role-owner', 'role-staff');
+  if (role) document.body.classList.add('role-' + role);
+  $('userChip').textContent = SESSION ? ('👤 ' + SESSION.user.name + ' · ' + (ROLE_LABEL[role] || role)) : '';
+  var active = document.querySelector('#tabs button.on');
+  if (role === 'staff' && active && active.classList.contains('owner-only')) document.querySelector('#tabs button[data-tab="pos"]').click();
+}
+
+function showLogin(msg){
+  var setup = LOGIN_MODE === 'setup';
+  $('loginTitle').textContent = setup ? 'ຕັ້ງຄ່າຄັ້ງທຳອິດ' : 'ເຂົ້າສູ່ລະບົບ';
+  $('loginSub').textContent = setup ? 'ສ້າງບັນຊີຜູ້ດູແລລະບົບ' : 'ລະບົບ POS ຂາຍເຄື່ອງ';
+  $('setupNameRow').style.display = setup ? '' : 'none';
+  $('setupHint').style.display = setup ? '' : 'none';
+  $('loginBtn').textContent = setup ? 'ສ້າງບັນຊີ ແລະ ເຂົ້າສູ່ລະບົບ' : 'ເຂົ້າສູ່ລະບົບ';
+  $('loginPass').setAttribute('autocomplete', setup ? 'new-password' : 'current-password');
+  $('loginErr').textContent = msg || '';
+  $('loginErr').classList.toggle('show', !!msg);
+  $('loginPass').value = '';
+  $('loginScreen').classList.add('show');
+  setTimeout(function(){ (setup ? $('loginName') : $('loginUser')).focus(); }, 50);
+}
+
+function startSession(res){
+  SESSION = { token: res.token, user: res.user };
+  saveSession();
+  $('loginScreen').classList.remove('show');
+  STATE.currentShop = res.user.role === 'admin' ? STATE.currentShop : res.user.shopId;
+  STATE.currentBranch = null;
+  applyRole();
+  bootFromCacheThenNetwork();
+}
+
+$('loginPassToggle').addEventListener('click', function(){
+  var el = $('loginPass');
+  el.type = el.type === 'password' ? 'text' : 'password';
+});
+
+$('loginForm').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  var user = $('loginUser').value.trim(), pass = $('loginPass').value;
+  var onFail = function(msg){ $('loginErr').textContent = msg; $('loginErr').classList.add('show'); };
+  var call = function(fn, args){
+    setBusy(true);
+    fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }) })
+      .then(function(r){ return r.json(); })
+      .then(function(res){ setBusy(false); if (res.ok) startSession(res.result); else onFail(res.error); })
+      .catch(function(err){ setBusy(false); onFail('ເຊື່ອມຕໍ່ບໍ່ໄດ້: ' + (err && err.message ? err.message : err)); });
+  };
+  if (LOGIN_MODE === 'setup') call('setupFirstAdmin', [$('loginName').value.trim(), user, pass]);
+  else call('login', [user, pass]);
+});
+
+$('logoutBtn').addEventListener('click', function(){
+  if (!window.confirm('ອອກຈາກລະບົບ?')) return;
+  var token = SESSION ? SESSION.token : '';
+  fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'logout', args: [], token: token }) }).catch(function(){});
+  endSession();
+  location.reload();
+});
+
+$('settingsBtn').addEventListener('click', function(){
+  renderShops(); renderBranches(); renderEmployeeManage(); renderUserShopSelect(); renderUsers();
+  $('settingsModal').classList.add('show');
+  $('settingsModal').querySelector('.box').scrollTop = 0;
+});
+function closeSettings(){ $('settingsModal').classList.remove('show'); }
+$('closeSettingsBtn').addEventListener('click', closeSettings);
+$('closeSettingsX').addEventListener('click', closeSettings);
+$('settingsModal').addEventListener('click', function(ev){ if (ev.target === this) closeSettings(); });
+
+$('changePwBtn').addEventListener('click', function(){
+  var oldPw = window.prompt('ລະຫັດຜ່ານປັດຈຸບັນ:');
+  if (!oldPw) return;
+  var newPw = window.prompt('ລະຫັດຜ່ານໃໝ່ (ຢ່າງໜ້ອຍ 6 ຕົວ):');
+  if (!newPw) return;
+  if (window.prompt('ພິມລະຫັດຜ່ານໃໝ່ອີກຄັ້ງ:') !== newPw) { toast('❌ ລະຫັດຜ່ານໃໝ່ບໍ່ກົງກັນ'); return; }
+  run('changeMyPassword', [oldPw, newPw], function(){ toast('✅ ປ່ຽນລະຫັດຜ່ານແລ້ວ'); });
+});
+
+/* ---------- ຈັດການບັນຊີຜູ້ໃຊ້ (ເຈົ້າຂອງຮ້ານ/ຜູ້ດູແລ) ---------- */
+function renderUserShopSelect(){
+  var sel = $('nuShop');
+  sel.innerHTML = '';
+  STATE.shops.forEach(function(s){
+    var o = document.createElement('option'); o.value = s.ID; o.textContent = s.Name; sel.appendChild(o);
+  });
+  sel.value = STATE.currentShop || '';
+}
+
+function renderUsers(){
+  if (!isOwner()) return;
+  run('listUsers', [], function(users){
+    var body = $('userBody');
+    body.innerHTML = '';
+    var list = isAdmin() ? users.filter(function(u){ return u.role === 'admin' || u.shopId === STATE.currentShop; }) : users;
+    if (!list.length) { body.innerHTML = '<tr><td colspan="4" class="hint">ຍັງບໍ່ມີບັນຊີ</td></tr>'; return; }
+    list.forEach(function(u){
+      var tr = document.createElement('tr');
+      var tagCls = !u.active ? 'role-tag off' : ('role-tag' + (u.role === 'staff' ? ' staff' : ''));
+      tr.innerHTML = '<td>' + escapeHtml(u.name) + '</td><td>' + escapeHtml(u.username) + '</td><td><span class="' + tagCls + '">' + (u.active ? (ROLE_LABEL[u.role] || u.role) : 'ປິດແລ້ວ') + '</span></td><td style="white-space:nowrap"></td>';
+      var td = tr.lastElementChild;
+      if (SESSION && u.id !== SESSION.user.id) {
+        var pw = document.createElement('button');
+        pw.className = 'icon-btn'; pw.textContent = '🔑'; pw.title = 'ຕັ້ງລະຫັດຜ່ານໃໝ່';
+        pw.addEventListener('click', function(){
+          var np = window.prompt('ລະຫັດຜ່ານໃໝ່ສຳລັບ ' + u.name + ' (ຢ່າງໜ້ອຍ 6 ຕົວ):');
+          if (np) run('resetUserPassword', [u.id, np], function(){ toast('✅ ຕັ້ງລະຫັດຜ່ານໃໝ່ແລ້ວ'); });
+        });
+        var act = document.createElement('button');
+        act.className = 'icon-btn'; act.textContent = u.active ? '⛔' : '✅'; act.title = u.active ? 'ປິດບັນຊີ' : 'ເປີດບັນຊີຄືນ';
+        act.addEventListener('click', function(){
+          if (u.active && !window.confirm('ປິດບັນຊີ ' + u.name + '? ຄົນນີ້ຈະຖືກອອກຈາກລະບົບທັນທີ.')) return;
+          run('setUserActive', [u.id, !u.active], function(){ toast('✅ ອັບເດດແລ້ວ'); renderUsers(); });
+        });
+        td.appendChild(pw); td.appendChild(act);
+      }
+      body.appendChild(tr);
+    });
+  });
+}
+
+$('addUserBtn').addEventListener('click', function(){
+  var u = { name: $('nuName').value.trim(), username: $('nuUser').value.trim(), password: $('nuPass').value, role: $('nuRole').value, shopId: isAdmin() ? $('nuShop').value : '' };
+  if (!u.username || !u.password) { toast('❌ ກະລຸນາປ້ອນຊື່ຜູ້ໃຊ້ ແລະ ລະຫັດຜ່ານ'); return; }
+  run('addUser', [u], function(){
+    toast('✅ ເພີ່ມບັນຊີ ' + u.username + ' ແລ້ວ');
+    $('nuName').value = ''; $('nuUser').value = ''; $('nuPass').value = '';
+    renderUsers();
+  });
+});
+
+
 /* ---------- start ---------- */
-bootFromCacheThenNetwork();
+if (SESSION && SESSION.token) {
+  applyRole();
+  bootFromCacheThenNetwork();
+} else {
+  fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'setupStatus', args: [] }) })
+    .then(function(r){ return r.json(); })
+    .then(function(res){ LOGIN_MODE = (res.ok && res.result.needsSetup) ? 'setup' : 'login'; showLogin(); })
+    .catch(function(){ showLogin(); });
+}
 })();
 </script>
 <script>
