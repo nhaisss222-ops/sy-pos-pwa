@@ -221,6 +221,10 @@ background:#16211d;color:#fff;padding:11px 18px;border-radius:11px;font-size:14p
 transition:.25s;pointer-events:none;z-index:80;box-shadow:0 8px 24px rgba(0,0,0,.22);max-width:90vw;text-align:center;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.busy-spinner{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;z-index:200;pointer-events:none}
+.busy-spinner.show{display:flex}
+.busy-spinner .spin{width:40px;height:40px;border-radius:50%;border:4px solid rgba(15,122,90,.18);border-top-color:#0f7a5a;animation:spy .7s linear infinite;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+@keyframes spy{to{transform:rotate(360deg)}}
 .hint{font-size:12px;color:var(--muted);margin-top:4px}
 details.sec{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--line);margin-bottom:12px;overflow:hidden}
 details.sec summary{list-style:none;cursor:pointer;padding:14px 16px;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -809,6 +813,7 @@ body:not(.role-admin) .admin-only{display:none !important}
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="busy-spinner" id="busySpinner"><div class="spin"></div></div>
 
 <script>
 (function(){
@@ -891,28 +896,48 @@ function toast(msg){
   toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2400);
 }
 
-function setBusy(b){ document.body.style.opacity = b ? '.65' : '1'; document.body.style.pointerEvents = b ? 'none' : 'auto'; }
+/* setBusy ໃຊ້ counter (ບໍ່ແມ່ນ boolean) ເພາະບາງຈຸດເອີ້ນ run() ຫຼາຍອັນຊ້ອນກັນ (ເຊັ່ນ ເປີດກ່ອງຕັ້ງຄ່າ) —
+   ຖ້າໃຊ້ boolean ຄຳຮ້ອງຂໍທຳອິດທີ່ສຳເລັດກ່ອນຈະໄປປົດລັອກໜ້າຈໍທັງໆທີ່ຄຳຮ້ອງຂໍອື່ນຍັງຄ້າງຢູ່ */
+var BUSY_COUNT_ = 0;
+function setBusy(b){
+  BUSY_COUNT_ = Math.max(0, BUSY_COUNT_ + (b ? 1 : -1));
+  var busy = BUSY_COUNT_ > 0;
+  document.body.style.opacity = busy ? '.65' : '1';
+  document.body.style.pointerEvents = busy ? 'none' : 'auto';
+  var sp = document.getElementById('busySpinner');
+  if (sp) sp.classList.toggle('show', busy);
+}
 
 var API_URL = 'https://script.google.com/macros/s/AKfycbyd7PCqS6S62VdY6OBoMv7_KgU8_sr2Ujpb24GJFAKY6yyXcBoLNY6-Qd3wuxrS2L4S/exec';
+/* ຖ້າ server ບໍ່ຕອບພາຍໃນເວລານີ້ (ວິນາທີ), ຍົກເລີກການຮ້ອງຂໍເອງ ແລ້ວປົດລັອກໜ້າຈໍ+ແຈ້ງເຕືອນ
+   ແທນທີ່ຈະຄ້າງລໍບໍ່ມີກຳນົດ (ແກ້ບັນຫາ "ກົດແລ້ວຄ້າງ" ເວລາເຄືອຂ່າຍ/server ຊ້າຫຼືບໍ່ຕອບ) */
+var REQUEST_TIMEOUT_MS = 30000;
 
 function run(fnName, args, onOk, onFail){
   setBusy(true);
+  var timedOut = false;
+  var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timer = setTimeout(function(){ timedOut = true; if (ctrl) ctrl.abort(); }, REQUEST_TIMEOUT_MS);
   fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ fn: fnName, args: args || [], token: SESSION ? SESSION.token : '' })
+    body: JSON.stringify({ fn: fnName, args: args || [], token: SESSION ? SESSION.token : '' }),
+    signal: ctrl ? ctrl.signal : undefined
   })
     .then(function(r){ return r.json(); })
     .then(function(res){
+      clearTimeout(timer);
       setBusy(false);
       if (res && res.ok) { if (onOk) onOk(res.result); }
       else if (res && res.auth) { endSession(); showLogin(res.error); if (onFail) onFail(res.error); }
       else { var msg = (res && res.error) || 'ມີຂໍ້ຜິດພາດ'; toast('❌ ' + msg); if (onFail) onFail(msg); }
     })
     .catch(function(err){
+      clearTimeout(timer);
       setBusy(false);
-      toast('❌ ' + (err && err.message ? err.message : err));
-      if (onFail) onFail(err);
+      var msg = timedOut ? 'ເຊື່ອມຕໍ່ຊ້າເກີນໄປ, ກະລຸນາລອງໃໝ່' : (err && err.message ? err.message : err);
+      toast('❌ ' + msg);
+      if (onFail) onFail(msg);
     });
 }
 
@@ -2764,10 +2789,13 @@ $('loginForm').addEventListener('submit', function(ev){
   var onFail = function(msg){ $('loginErr').textContent = msg; $('loginErr').classList.add('show'); };
   var call = function(fn, args){
     setBusy(true);
-    fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }) })
+    var timedOut = false;
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = setTimeout(function(){ timedOut = true; if (ctrl) ctrl.abort(); }, REQUEST_TIMEOUT_MS);
+    fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }), signal: ctrl ? ctrl.signal : undefined })
       .then(function(r){ return r.json(); })
-      .then(function(res){ setBusy(false); if (res.ok) startSession(res.result); else onFail(res.error); })
-      .catch(function(err){ setBusy(false); onFail('ເຊື່ອມຕໍ່ບໍ່ໄດ້: ' + (err && err.message ? err.message : err)); });
+      .then(function(res){ clearTimeout(timer); setBusy(false); if (res.ok) startSession(res.result); else onFail(res.error); })
+      .catch(function(err){ clearTimeout(timer); setBusy(false); onFail(timedOut ? 'ເຊື່ອມຕໍ່ຊ້າເກີນໄປ, ກະລຸນາລອງໃໝ່' : ('ເຊື່ອມຕໍ່ບໍ່ໄດ້: ' + (err && err.message ? err.message : err))); });
   };
   if (LOGIN_MODE === 'setup') call('setupFirstAdmin', [$('loginName').value.trim(), user, pass]);
   else call('login', [user, pass]);
@@ -2858,10 +2886,14 @@ if (SESSION && SESSION.token) {
   applyRole();
   bootFromCacheThenNetwork();
 } else {
-  fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'setupStatus', args: [] }) })
-    .then(function(r){ return r.json(); })
-    .then(function(res){ LOGIN_MODE = (res.ok && res.result.needsSetup) ? 'setup' : 'login'; showLogin(); })
-    .catch(function(){ showLogin(); });
+  (function(){
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = setTimeout(function(){ if (ctrl) ctrl.abort(); }, REQUEST_TIMEOUT_MS);
+    fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'setupStatus', args: [] }), signal: ctrl ? ctrl.signal : undefined })
+      .then(function(r){ return r.json(); })
+      .then(function(res){ clearTimeout(timer); LOGIN_MODE = (res.ok && res.result.needsSetup) ? 'setup' : 'login'; showLogin(); })
+      .catch(function(){ clearTimeout(timer); showLogin(); });
+  })();
 }
 })();
 </script>
