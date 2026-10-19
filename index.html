@@ -2900,7 +2900,26 @@ if (SESSION && SESSION.token) {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function(){
-    navigator.serviceWorker.register('sw.js').catch(function(err){ console.warn('SW register failed', err); });
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      /* ຕົວຢ່າງປັນຫາ: ຄົນເປີດແອັບ PWA ຈາກໜ້າຈໍຫຼັກ (ບໍ່ແມ່ນເປີດ tab browser ໃໝ່) ອາດຍັງໃຊ້
+         Service Worker/JS ສະບັບເກົ່າຄ້າງຢູ່ຕໍ່ໆໄປໂດຍບໍ່ຮູ້ຕົວ (browser ບໍ່ກວດ sw.js ສະບັບໃໝ່ທັນທີສະເໝີ)
+         ເຮັດໃຫ້ຮູ້ສຶກວ່າແອັບ "ຄ້າງ" ເພາະໂຄ້ດເກົ່າ/ບໍ່ກົງກັບ backend ປັດຈຸບັນ — ແກ້ໂດຍ:
+         1) ບັງຄັບກວດ sw.js ສະບັບໃໝ່ທັນທີທີ່ເປີດແອັບ ແລະ ທຸກຄັ້ງທີ່ສະຫຼັບກັບມາເປີດແອັບຄືນ (visibilitychange)
+         2) ເມື່ອພົບ Service Worker ໃໝ່ຕິດຕັ້ງ+ເຂົ້າຄວບຄຸມໜ້າແລ້ວ (controllerchange) ໃຫ້ reload ໜ້າອັດຕະໂນມັດ
+            ຄັ້ງດຽວ (ກັນ loop ດ້ວຍ REFRESHING_) ເພື່ອດຶງ index.html+ໂຄ້ດລ່າສຸດມາໃຊ້ທັນທີ */
+      try {
+        reg.update();
+        document.addEventListener('visibilitychange', function(){
+          if (document.visibilityState === 'visible') reg.update();
+        });
+      } catch (e) {}
+    }).catch(function(err){ console.warn('SW register failed', err); });
+    var REFRESHING_ = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if (REFRESHING_) return;
+      REFRESHING_ = true;
+      location.reload();
+    });
   });
 }
 </script>

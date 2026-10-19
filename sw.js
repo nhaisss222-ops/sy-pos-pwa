@@ -1,4 +1,4 @@
-var CACHE_NAME = 'sy-pos-shell-v5';
+var CACHE_NAME = 'sy-pos-shell-v6';
 var SHELL_FILES = [
   './manifest.json',
   './icon-192.png',
@@ -23,9 +23,10 @@ self.addEventListener('activate', function(event){
 });
 
 function isNetworkFirst(url){
-  for (var i = 0; i < NETWORK_FIRST.length; i++) {
-    if (url.indexOf(NETWORK_FIRST[i].replace('./', '')) !== -1 || url.slice(-1) === '/') return true;
-  }
+  // ໝາຍເຫດ (ແກ້ bug): ເກົ່າ .replace('./','') ເຮັດໃຫ້ './' ກາຍເປັນ string ຫວ່າງ ແລ້ວ indexOf('') == 0 ສະເໝີ
+  // ເຮັດໃຫ້ຟັງຊັນນີ້ return true ທຸກ url ໂດຍບໍ່ຕັ້ງໃຈ (ບໍ່ແມ່ນບັນຫາໃຫຍ່ ເພາະ network-first ປອດໄພກວ່າ
+  // ແຕ່ເຮັດໃຫ້ icon/manifest ບໍ່ໄດ້ປະໂຫຍດຈາກ cache-first ຕາມທີ່ຕັ້ງໃຈໄວ້) — ແກ້ໃຫ້ກວດຖືກຕ້ອງ
+  if (url.slice(-1) === '/' || url.indexOf('/index.html') !== -1) return true;
   return false;
 }
 
