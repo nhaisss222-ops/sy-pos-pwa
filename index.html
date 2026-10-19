@@ -546,21 +546,6 @@ body:not(.role-admin) .admin-only{display:none !important}
 <input type="text" id="closeTransfer" inputmode="decimal" placeholder="0">
 </label>
 </div>
-<div class="hint" style="margin:12px 0 0;font-weight:700;color:var(--ink)">👥 ແຍກລາຍຮັບມື້ນີ້ຕາມຄົນ (Yai / Sing) — ສົດ ແລະ ໂອນ</div>
-<div class="grid2" style="margin-top:8px">
-<label class="fld">Yai — ເງິນສົດ
-<input type="text" id="closeYaiCash" inputmode="decimal" placeholder="0">
-</label>
-<label class="fld">Yai — ເງິນໂອນ
-<input type="text" id="closeYaiTransfer" inputmode="decimal" placeholder="0">
-</label>
-<label class="fld">Sing — ເງິນສົດ
-<input type="text" id="closeSingCash" inputmode="decimal" placeholder="0">
-</label>
-<label class="fld">Sing — ເງິນໂອນ
-<input type="text" id="closeSingTransfer" inputmode="decimal" placeholder="0">
-</label>
-</div>
 <div class="hint" style="margin:12px 0 0;font-weight:700;color:var(--ink)">➖ ລາຍຈ່າຍ (ບໍ່ຈຳເປັນ — ກົດ "ບັນທຶກລາຍຈ່າຍ" ໄດ້ຫຼາຍລາຍການກ່ອນຈະລົງບັນຊີ)</div>
 <div class="grid2" style="margin-top:8px">
 <label class="fld">ໝວດລາຍຈ່າຍ
@@ -1261,11 +1246,7 @@ $('closeDayBtn').addEventListener('click', function(){
     branchId: STATE.currentBranch,
     date: dateStr,
     cash: (STATE.closeDayCalc && STATE.closeDayCalc.cash) || 0,
-    transfer: (STATE.closeDayCalc && STATE.closeDayCalc.transfer) || 0,
-    yaiCash: parseAmount($('closeYaiCash').value) || 0,
-    yaiTransfer: parseAmount($('closeYaiTransfer').value) || 0,
-    singCash: parseAmount($('closeSingCash').value) || 0,
-    singTransfer: parseAmount($('closeSingTransfer').value) || 0
+    transfer: (STATE.closeDayCalc && STATE.closeDayCalc.transfer) || 0
   };
   var expAmount = parseAmount($('closeExpAmount').value);
   function finishClose(){
@@ -1603,7 +1584,7 @@ $('cartDiscount').addEventListener('input', function(){
     $('splitTransferAmount').value = fmt(0);
   }
 });
-attachAmountFormatting(['pPrice','pStockQty','pMinStock','iAmount','eAmount','closeCash','closeTransfer','closeYaiCash','closeYaiTransfer','closeSingCash','closeSingTransfer','closeExpAmount','splitCashAmount','splitTransferAmount','cartDiscount']);
+attachAmountFormatting(['pPrice','pStockQty','pMinStock','iAmount','eAmount','closeCash','closeTransfer','closeExpAmount','splitCashAmount','splitTransferAmount','cartDiscount']);
 
 $('checkoutBtn').addEventListener('click', function(){
   if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
@@ -2479,10 +2460,6 @@ function renderSummary(){
         /* ມີຂໍ້ມູນໃໝ່ (ຂາຍ/ຍົກເລີກ) ເກີດຂຶ້ນຫຼັງປິດບັນຊີ — ສະແດງຟອມຄືນເພື່ອໃຫ້ກວດ ແລະລົງບັນຊີຄືນ */
         $('closeCash').value = fmt(dm.cash);
         $('closeTransfer').value = fmt(dm.transfer);
-        $('closeYaiCash').value = fmt(Number(dayClosing.YaiCash) || 0);
-        $('closeYaiTransfer').value = fmt(Number(dayClosing.YaiTransfer) || 0);
-        $('closeSingCash').value = fmt(Number(dayClosing.SingCash) || 0);
-        $('closeSingTransfer').value = fmt(Number(dayClosing.SingTransfer) || 0);
         $('closeStatus').innerHTML = '⚠️ ຍອດທີ່ປິດບັນຊີໄວ້ (ຂ້າງເທິງ) ບໍ່ຕົງກັບຍອດຂາຍລ່າສຸດທີ່ລະບົບຄຳນວນໄດ້ຕອນນີ້ (ເງິນສົດ ' + fmt(dm.cash) + ' / ເງິນໂອນ ' + fmt(dm.transfer) + ') — ອາດແມ່ນຍ້ອນຍົກເລີກ/ແກ້ໄຂບິນພາຍຫຼັງປິດບັນຊີແລ້ວ. ກວດຍອດຄືນ ແລ້ວກົດ "ລົງບັນຊີ" ເພື່ອອັບເດດ';
         closeFormArea.style.display = '';
         closeClosedSummary.style.display = 'none';
@@ -2497,10 +2474,6 @@ function renderSummary(){
     } else {
       $('closeCash').value = fmt(dm.cash);
       $('closeTransfer').value = fmt(dm.transfer);
-      $('closeYaiCash').value = '';
-      $('closeYaiTransfer').value = '';
-      $('closeSingCash').value = '';
-      $('closeSingTransfer').value = '';
       $('closeStatus').textContent = 'ຍັງບໍ່ໄດ້ປິດບັນຊີມື້ນີ້';
       closeFormArea.style.display = '';
       closeClosedSummary.style.display = 'none';
@@ -2600,18 +2573,46 @@ function ledgerTotals(data, from, to){
   var count = sales.length + incomes.length + expenses.length;
   return { income: income, expense: expense, net: income - expense, count: count, sales: sales, incomes: incomes, expenses: expenses, closings: closings };
 }
-/** ແບ່ງລາຍຈ່າຍທັງໝົດ (ໃນໄລຍະເວລາທີ່ເລືອກ) ອອກ 2 ສ່ວນເທົ່າກັນ ແລ້ວເອົາຍອດທີ່ລົງບັນຊີແຍກຕາມຄົນ (Yai / Sing — ສົດ+ໂອນ) ມາລົບອອກ ເພື່ອເບິ່ງວ່າແຕ່ລະຄົນຍັງເຫຼືອ/ຂາດຈັກເທົ່າ — ແລະ ສະຫຼຸບລວມ Yai+Sing ພ້ອມແຍກສົດ/ໂອນ */
-function renderDashSplitCard(cur){
+/** ແບ່ງລາຍຈ່າຍທັງໝົດ (ໃນໄລຍະເວລາທີ່ເລືອກ) ອອກ 2 ສ່ວນເທົ່າກັນ ແລ້ວເອົາຍອດຂາຍທີ່ແຍກຕາມ "ໝວດສິນຄ້າ" Yai/Sing (ອັດຕະໂນມັດ, ບໍ່ຕ້ອງພິມ — ອັບເດດຮອບ 15) ມາລົບອອກ ເພື່ອເບິ່ງວ່າແຕ່ລະຄົນຍັງເຫຼືອ/ຂາດຈັກເທົ່າ — ແລະ ສະຫຼຸບລວມ Yai+Sing ພ້ອມແຍກສົດ/ໂອນ. ສົດ/ໂອນ ແຍກຕາມສັດສ່ວນ PaymentType/CashAmount/TransferAmount ຂອງແຕ່ລະບິນ. ຍັງນັບລາຍຮັບທີ່ບັນທຶກເອງ (ຊີດ Incomes) ທີ່ຕັ້ງໝວດ "Yai"/"Sing" ນຳ (ຖ້າມີ) */
+function renderDashSplitCard(cur, catById, itemsBySale){
   var box = $('dashSplitCard');
   if (!box) return;
   var totalExpense = cur.expense;
   var halfExpense = totalExpense / 2;
   var yaiCash = 0, yaiTransfer = 0, singCash = 0, singTransfer = 0;
-  (cur.closings || []).forEach(function(c){
-    yaiCash += Number(c.YaiCash) || 0;
-    yaiTransfer += Number(c.YaiTransfer) || 0;
-    singCash += Number(c.SingCash) || 0;
-    singTransfer += Number(c.SingTransfer) || 0;
+  cur.sales.forEach(function(s){
+    var total = Number(s.Total) || 0;
+    if (total <= 0) return;
+    var cashAmt, transferAmt;
+    if (s.PaymentType === 'split') {
+      cashAmt = Number(s.CashAmount) || 0;
+      transferAmt = Number(s.TransferAmount) || 0;
+    } else if (s.PaymentType === 'transfer') {
+      cashAmt = 0; transferAmt = total;
+    } else {
+      cashAmt = total; transferAmt = 0;
+    }
+    var cashRatio = cashAmt / total;
+    var transferRatio = transferAmt / total;
+    (itemsBySale[s.ID] || []).forEach(function(it){
+      var cat = String(catById[it.ProductID] || '').trim().toLowerCase();
+      var line = Number(it.LineTotal) || 0;
+      if (cat === 'yai') {
+        yaiCash += line * cashRatio;
+        yaiTransfer += line * transferRatio;
+      } else if (cat === 'sing') {
+        singCash += line * cashRatio;
+        singTransfer += line * transferRatio;
+      }
+    });
+  });
+  (cur.incomes || []).forEach(function(e){
+    var cat = String(e.Category || '').trim().toLowerCase();
+    var amt = Number(e.Amount) || 0;
+    if (!amt || (cat !== 'yai' && cat !== 'sing')) return;
+    var isTransfer = e.PaymentType === 'transfer';
+    if (cat === 'yai') { if (isTransfer) yaiTransfer += amt; else yaiCash += amt; }
+    else { if (isTransfer) singTransfer += amt; else singCash += amt; }
   });
   var yaiIncome = yaiCash + yaiTransfer;
   var singIncome = singCash + singTransfer;
@@ -2665,7 +2666,12 @@ function renderDashboard(){
     $('dashNetCard').className = 'scard ' + (cur.net < 0 ? 'neg' : 'net');
     $('dashNetCard').innerHTML = '<div class="label">⚖️ ກຳໄລ/ຂາດທຶນສຸດທິ (ລາຍຮັບ - ລາຍຈ່າຍ)</div><div class="val">' + fmt(cur.net) + ' ກີບ</div>';
 
-    renderDashSplitCard(cur);
+    var catById = {};
+    STATE.products.forEach(function(p){ catById[p.ID] = p.Category || 'ອື່ນໆ'; });
+    var itemsBySale = {};
+    (data.items || []).forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
+
+    renderDashSplitCard(cur, catById, itemsBySale);
 
     var map = {};
     function day(d){ if (!map[d]) map[d] = { income: 0, expense: 0 }; return map[d]; }
@@ -2674,11 +2680,7 @@ function renderDashboard(){
     cur.expenses.forEach(function(e){ day(e.Date).expense += Number(e.Amount) || 0; });
     renderDashboardChart(map);
 
-    var catById = {};
-    STATE.products.forEach(function(p){ catById[p.ID] = p.Category || 'ອື່ນໆ'; });
     var incomeCat = {}, expenseCat = {};
-    var itemsBySale = {};
-    (data.items || []).forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
     cur.sales.forEach(function(s){
       (itemsBySale[s.ID] || []).forEach(function(it){
         var cat = catById[it.ProductID] || 'ອື່ນໆ';
