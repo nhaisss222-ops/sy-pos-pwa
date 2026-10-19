@@ -614,6 +614,8 @@ body:not(.role-admin) .admin-only{display:none !important}
 </div>
 <div class="gauge-row" id="dashGauges"></div>
 <div class="scard net" id="dashNetCard" style="margin-bottom:12px"></div>
+<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">🤝 ແບ່ງລາຍຈ່າຍເທົ່າກັນ 2 ຄົນ ແລະ ສະຫຼຸບລາຍຮັບແຍກຄົນ (Yai / Sing)</div>
+<div id="dashSplitCard" style="margin-bottom:16px"></div>
 <div id="dashChart" style="margin:14px 0"></div>
 <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px">🍰 ສັດສ່ວນລາຍຮັບຕາມໝວດສິນຄ້າ</div>
 <div id="dashCatDonut" style="margin-bottom:16px"></div>
@@ -2570,6 +2572,36 @@ function ledgerTotals(data, from, to){
   var count = sales.length + incomes.length + expenses.length;
   return { income: income, expense: expense, net: income - expense, count: count, sales: sales, incomes: incomes, expenses: expenses };
 }
+/** ແບ່ງລາຍຈ່າຍທັງໝົດ (ໃນໄລຍະເວລາທີ່ເລືອກ) ອອກ 2 ສ່ວນເທົ່າກັນ ແລ້ວເອົາລາຍຮັບທີ່ບັນທຶກໄວ້ໃນໝວດ "Yai" ແລະ "Sing" (ຈາກໜ້າລາຍຮັບ) ມາລົບອອກ ເພື່ອເບິ່ງວ່າແຕ່ລະຄົນຍັງເຫຼືອ/ຂາດຈັກເທົ່າ */
+function renderDashSplitCard(cur){
+  var box = $('dashSplitCard');
+  if (!box) return;
+  var totalExpense = cur.expense;
+  var halfExpense = totalExpense / 2;
+  var incomeByCat = {};
+  (cur.incomes || []).forEach(function(e){
+    var cat = String(e.Category || '').trim();
+    if (!cat) return;
+    incomeByCat[cat] = (incomeByCat[cat] || 0) + (Number(e.Amount) || 0);
+  });
+  function catIncome(name){
+    var total = 0;
+    Object.keys(incomeByCat).forEach(function(k){
+      if (k.toLowerCase() === name.toLowerCase()) total += incomeByCat[k];
+    });
+    return total;
+  }
+  var yaiIncome = catIncome('Yai');
+  var singIncome = catIncome('Sing');
+  var yaiNet = yaiIncome - halfExpense;
+  var singNet = singIncome - halfExpense;
+  box.innerHTML =
+    '<div class="scard" style="margin-bottom:8px"><div class="label">💸 ລາຍຈ່າຍທັງໝົດ ÷ 2 (ຕໍ່ຄົນ)</div><div class="val">' + fmt(totalExpense) + ' ÷ 2 = ' + fmt(halfExpense) + ' ກີບ</div></div>' +
+    '<div class="gauge-row" style="grid-template-columns:repeat(2,1fr)">' +
+      '<div class="scard ' + (yaiNet < 0 ? 'neg' : 'net') + '"><div class="label">👤 Yai — ລາຍຮັບ ' + fmt(yaiIncome) + ' − ລາຍຈ່າຍ÷2</div><div class="val">' + fmt(yaiNet) + ' ກີບ</div></div>' +
+      '<div class="scard ' + (singNet < 0 ? 'neg' : 'net') + '"><div class="label">👤 Sing — ລາຍຮັບ ' + fmt(singIncome) + ' − ລາຍຈ່າຍ÷2</div><div class="val">' + fmt(singNet) + ' ກີບ</div></div>' +
+    '</div>';
+}
 function renderDashboard(){
   $('dashBranchChip').textContent = branchName(STATE.currentBranch);
   if (!STATE.dashPeriod || !STATE.dashPeriod.from) {
@@ -2606,6 +2638,8 @@ function renderDashboard(){
       gaugeSvg(cur.expense, cur.expense / maxVal, 'var(--out)', 'ລາຍຈ່າຍລວມ', pctDelta(cur.expense, prevT.expense), false);
     $('dashNetCard').className = 'scard ' + (cur.net < 0 ? 'neg' : 'net');
     $('dashNetCard').innerHTML = '<div class="label">⚖️ ກຳໄລ/ຂາດທຶນສຸດທິ (ລາຍຮັບ - ລາຍຈ່າຍ)</div><div class="val">' + fmt(cur.net) + ' ກີບ</div>';
+
+    renderDashSplitCard(cur);
 
     var map = {};
     function day(d){ if (!map[d]) map[d] = { income: 0, expense: 0 }; return map[d]; }
