@@ -546,6 +546,21 @@ body:not(.role-admin) .admin-only{display:none !important}
 <input type="text" id="closeTransfer" inputmode="decimal" placeholder="0">
 </label>
 </div>
+<div class="hint" style="margin:12px 0 0;font-weight:700;color:var(--ink)">👥 ແຍກລາຍຮັບມື້ນີ້ຕາມຄົນ (Yai / Sing) — ສົດ ແລະ ໂອນ</div>
+<div class="grid2" style="margin-top:8px">
+<label class="fld">Yai — ເງິນສົດ
+<input type="text" id="closeYaiCash" inputmode="decimal" placeholder="0">
+</label>
+<label class="fld">Yai — ເງິນໂອນ
+<input type="text" id="closeYaiTransfer" inputmode="decimal" placeholder="0">
+</label>
+<label class="fld">Sing — ເງິນສົດ
+<input type="text" id="closeSingCash" inputmode="decimal" placeholder="0">
+</label>
+<label class="fld">Sing — ເງິນໂອນ
+<input type="text" id="closeSingTransfer" inputmode="decimal" placeholder="0">
+</label>
+</div>
 <div class="hint" style="margin:12px 0 0;font-weight:700;color:var(--ink)">➖ ລາຍຈ່າຍ (ບໍ່ຈຳເປັນ — ກົດ "ບັນທຶກລາຍຈ່າຍ" ໄດ້ຫຼາຍລາຍການກ່ອນຈະລົງບັນຊີ)</div>
 <div class="grid2" style="margin-top:8px">
 <label class="fld">ໝວດລາຍຈ່າຍ
@@ -1246,7 +1261,11 @@ $('closeDayBtn').addEventListener('click', function(){
     branchId: STATE.currentBranch,
     date: dateStr,
     cash: (STATE.closeDayCalc && STATE.closeDayCalc.cash) || 0,
-    transfer: (STATE.closeDayCalc && STATE.closeDayCalc.transfer) || 0
+    transfer: (STATE.closeDayCalc && STATE.closeDayCalc.transfer) || 0,
+    yaiCash: parseAmount($('closeYaiCash').value) || 0,
+    yaiTransfer: parseAmount($('closeYaiTransfer').value) || 0,
+    singCash: parseAmount($('closeSingCash').value) || 0,
+    singTransfer: parseAmount($('closeSingTransfer').value) || 0
   };
   var expAmount = parseAmount($('closeExpAmount').value);
   function finishClose(){
@@ -1584,7 +1603,7 @@ $('cartDiscount').addEventListener('input', function(){
     $('splitTransferAmount').value = fmt(0);
   }
 });
-attachAmountFormatting(['pPrice','pStockQty','pMinStock','iAmount','eAmount','closeCash','closeTransfer','closeExpAmount','splitCashAmount','splitTransferAmount','cartDiscount']);
+attachAmountFormatting(['pPrice','pStockQty','pMinStock','iAmount','eAmount','closeCash','closeTransfer','closeYaiCash','closeYaiTransfer','closeSingCash','closeSingTransfer','closeExpAmount','splitCashAmount','splitTransferAmount','cartDiscount']);
 
 $('checkoutBtn').addEventListener('click', function(){
   if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
@@ -2460,6 +2479,10 @@ function renderSummary(){
         /* ມີຂໍ້ມູນໃໝ່ (ຂາຍ/ຍົກເລີກ) ເກີດຂຶ້ນຫຼັງປິດບັນຊີ — ສະແດງຟອມຄືນເພື່ອໃຫ້ກວດ ແລະລົງບັນຊີຄືນ */
         $('closeCash').value = fmt(dm.cash);
         $('closeTransfer').value = fmt(dm.transfer);
+        $('closeYaiCash').value = fmt(Number(dayClosing.YaiCash) || 0);
+        $('closeYaiTransfer').value = fmt(Number(dayClosing.YaiTransfer) || 0);
+        $('closeSingCash').value = fmt(Number(dayClosing.SingCash) || 0);
+        $('closeSingTransfer').value = fmt(Number(dayClosing.SingTransfer) || 0);
         $('closeStatus').innerHTML = '⚠️ ຍອດທີ່ປິດບັນຊີໄວ້ (ຂ້າງເທິງ) ບໍ່ຕົງກັບຍອດຂາຍລ່າສຸດທີ່ລະບົບຄຳນວນໄດ້ຕອນນີ້ (ເງິນສົດ ' + fmt(dm.cash) + ' / ເງິນໂອນ ' + fmt(dm.transfer) + ') — ອາດແມ່ນຍ້ອນຍົກເລີກ/ແກ້ໄຂບິນພາຍຫຼັງປິດບັນຊີແລ້ວ. ກວດຍອດຄືນ ແລ້ວກົດ "ລົງບັນຊີ" ເພື່ອອັບເດດ';
         closeFormArea.style.display = '';
         closeClosedSummary.style.display = 'none';
@@ -2474,6 +2497,10 @@ function renderSummary(){
     } else {
       $('closeCash').value = fmt(dm.cash);
       $('closeTransfer').value = fmt(dm.transfer);
+      $('closeYaiCash').value = '';
+      $('closeYaiTransfer').value = '';
+      $('closeSingCash').value = '';
+      $('closeSingTransfer').value = '';
       $('closeStatus').textContent = 'ຍັງບໍ່ໄດ້ປິດບັນຊີມື້ນີ້';
       closeFormArea.style.display = '';
       closeClosedSummary.style.display = 'none';
@@ -2565,42 +2592,41 @@ function ledgerTotals(data, from, to){
   var sales = (data.sales || []).filter(function(s){ return s.BranchID === STATE.currentBranch && inRange(s.Date); });
   var incomes = (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
   var expenses = (data.expenses || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
+  var closings = (data.closings || []).filter(function(c){ return c.BranchID === STATE.currentBranch && inRange(c.Date); });
   var income = 0, expense = 0;
   sales.forEach(function(s){ income += Number(s.Total) || 0; });
   incomes.forEach(function(e){ income += Number(e.Amount) || 0; });
   expenses.forEach(function(e){ expense += Number(e.Amount) || 0; });
   var count = sales.length + incomes.length + expenses.length;
-  return { income: income, expense: expense, net: income - expense, count: count, sales: sales, incomes: incomes, expenses: expenses };
+  return { income: income, expense: expense, net: income - expense, count: count, sales: sales, incomes: incomes, expenses: expenses, closings: closings };
 }
-/** ແບ່ງລາຍຈ່າຍທັງໝົດ (ໃນໄລຍະເວລາທີ່ເລືອກ) ອອກ 2 ສ່ວນເທົ່າກັນ ແລ້ວເອົາລາຍຮັບທີ່ບັນທຶກໄວ້ໃນໝວດ "Yai" ແລະ "Sing" (ຈາກໜ້າລາຍຮັບ) ມາລົບອອກ ເພື່ອເບິ່ງວ່າແຕ່ລະຄົນຍັງເຫຼືອ/ຂາດຈັກເທົ່າ */
+/** ແບ່ງລາຍຈ່າຍທັງໝົດ (ໃນໄລຍະເວລາທີ່ເລືອກ) ອອກ 2 ສ່ວນເທົ່າກັນ ແລ້ວເອົາຍອດທີ່ລົງບັນຊີແຍກຕາມຄົນ (Yai / Sing — ສົດ+ໂອນ) ມາລົບອອກ ເພື່ອເບິ່ງວ່າແຕ່ລະຄົນຍັງເຫຼືອ/ຂາດຈັກເທົ່າ — ແລະ ສະຫຼຸບລວມ Yai+Sing ພ້ອມແຍກສົດ/ໂອນ */
 function renderDashSplitCard(cur){
   var box = $('dashSplitCard');
   if (!box) return;
   var totalExpense = cur.expense;
   var halfExpense = totalExpense / 2;
-  var incomeByCat = {};
-  (cur.incomes || []).forEach(function(e){
-    var cat = String(e.Category || '').trim();
-    if (!cat) return;
-    incomeByCat[cat] = (incomeByCat[cat] || 0) + (Number(e.Amount) || 0);
+  var yaiCash = 0, yaiTransfer = 0, singCash = 0, singTransfer = 0;
+  (cur.closings || []).forEach(function(c){
+    yaiCash += Number(c.YaiCash) || 0;
+    yaiTransfer += Number(c.YaiTransfer) || 0;
+    singCash += Number(c.SingCash) || 0;
+    singTransfer += Number(c.SingTransfer) || 0;
   });
-  function catIncome(name){
-    var total = 0;
-    Object.keys(incomeByCat).forEach(function(k){
-      if (k.toLowerCase() === name.toLowerCase()) total += incomeByCat[k];
-    });
-    return total;
-  }
-  var yaiIncome = catIncome('Yai');
-  var singIncome = catIncome('Sing');
+  var yaiIncome = yaiCash + yaiTransfer;
+  var singIncome = singCash + singTransfer;
   var yaiNet = yaiIncome - halfExpense;
   var singNet = singIncome - halfExpense;
+  var totalCash = yaiCash + singCash;
+  var totalTransfer = yaiTransfer + singTransfer;
+  var combinedNet = yaiNet + singNet;
   box.innerHTML =
     '<div class="scard" style="margin-bottom:8px"><div class="label">💸 ລາຍຈ່າຍທັງໝົດ ÷ 2 (ຕໍ່ຄົນ)</div><div class="val">' + fmt(totalExpense) + ' ÷ 2 = ' + fmt(halfExpense) + ' ກີບ</div></div>' +
     '<div class="gauge-row" style="grid-template-columns:repeat(2,1fr)">' +
-      '<div class="scard ' + (yaiNet < 0 ? 'neg' : 'net') + '"><div class="label">👤 Yai — ລາຍຮັບ ' + fmt(yaiIncome) + ' − ລາຍຈ່າຍ÷2</div><div class="val">' + fmt(yaiNet) + ' ກີບ</div></div>' +
-      '<div class="scard ' + (singNet < 0 ? 'neg' : 'net') + '"><div class="label">👤 Sing — ລາຍຮັບ ' + fmt(singIncome) + ' − ລາຍຈ່າຍ÷2</div><div class="val">' + fmt(singNet) + ' ກີບ</div></div>' +
-    '</div>';
+      '<div class="scard ' + (yaiNet < 0 ? 'neg' : 'net') + '"><div class="label">👤 Yai — ສົດ ' + fmt(yaiCash) + ' + ໂອນ ' + fmt(yaiTransfer) + ' = ' + fmt(yaiIncome) + ' − ລາຍຈ່າຍ÷2</div><div class="val">' + fmt(yaiNet) + ' ກີບ</div></div>' +
+      '<div class="scard ' + (singNet < 0 ? 'neg' : 'net') + '"><div class="label">👤 Sing — ສົດ ' + fmt(singCash) + ' + ໂອນ ' + fmt(singTransfer) + ' = ' + fmt(singIncome) + ' − ລາຍຈ່າຍ÷2</div><div class="val">' + fmt(singNet) + ' ກີບ</div></div>' +
+    '</div>' +
+    '<div class="scard ' + (combinedNet < 0 ? 'neg' : 'net') + '" style="margin-top:8px"><div class="label">🤝 Yai + Sing — ສົດ ' + fmt(totalCash) + ' + ໂອນ ' + fmt(totalTransfer) + '</div><div class="val">' + fmt(yaiNet) + ' + ' + fmt(singNet) + ' = ' + fmt(combinedNet) + ' ກີບ</div></div>';
 }
 function renderDashboard(){
   $('dashBranchChip').textContent = branchName(STATE.currentBranch);
