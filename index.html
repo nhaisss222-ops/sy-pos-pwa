@@ -2840,7 +2840,8 @@ function renderDashboard(){
     $('dashNetCard').innerHTML = '<div class="label">⚖️ ກຳໄລ/ຂາດທຶນສຸດທິ (ລາຍຮັບ - ລາຍຈ່າຍ)</div><div class="val">' + fmt(cur.net) + ' ກີບ</div>';
 
     var catById = {};
-    STATE.products.forEach(function(p){ catById[p.ID] = p.Category || 'ອື່ນໆ'; });
+    var imgById = {};
+    STATE.products.forEach(function(p){ catById[p.ID] = p.Category || 'ອື່ນໆ'; imgById[p.ID] = p.Image || ''; });
     var itemsBySale = {};
     (data.items || []).forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
 
@@ -2885,7 +2886,7 @@ function renderDashboard(){
     cur.sales.forEach(function(s){
       (itemsBySale[s.ID] || []).forEach(function(it){
         var pid = it.ProductID;
-        if (!productSales[pid]) productSales[pid] = { name: it.ProductName || 'ບໍ່ມີຊື່', qty: 0, total: 0 };
+        if (!productSales[pid]) productSales[pid] = { name: it.ProductName || 'ບໍ່ມີຊື່', img: imgById[pid] || '', qty: 0, total: 0 };
         productSales[pid].qty += Number(it.Qty) || 0;
         productSales[pid].total += Number(it.LineTotal) || 0;
       });
@@ -2896,7 +2897,8 @@ function renderDashboard(){
     prodBody.innerHTML = '';
     prodList.forEach(function(p){
       var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + escapeHtml(p.name) + '</td><td class="num">' + fmt(p.qty) + '</td><td class="num" style="color:var(--in)">' + fmt(p.total) + '</td>';
+      var thumb = p.img ? '<img class="row-thumb" src="' + p.img + '">' : '';
+      tr.innerHTML = '<td>' + thumb + escapeHtml(p.name) + '</td><td class="num">' + fmt(p.qty) + '</td><td class="num" style="color:var(--in)">' + fmt(p.total) + '</td>';
       prodBody.appendChild(tr);
     });
     $('dashProductEmpty').style.display = prodList.length ? 'none' : 'block';
