@@ -1344,7 +1344,8 @@ $('closeDayBtn').addEventListener('click', function(){
     branchId: STATE.currentBranch,
     date: dateStr,
     cash: (STATE.closeDayCalc && STATE.closeDayCalc.cash) || 0,
-    transfer: (STATE.closeDayCalc && STATE.closeDayCalc.transfer) || 0
+    transfer: (STATE.closeDayCalc && STATE.closeDayCalc.transfer) || 0,
+    expense: (STATE.closeDayCalc && STATE.closeDayCalc.exp) || 0
   };
   var expAmount = parseAmount($('closeExpAmount').value);
   function finishClose(){
@@ -2165,7 +2166,7 @@ $('incForm').addEventListener('submit', function(ev){
   run('addIncome', [e], function(){
     invalidateDataCache();
     toast('✅ ບັນທຶກລາຍຮັບແລ້ວ');
-    $('iItem').value = ''; $('iAmount').value = ''; $('iNote').value = '';
+    $('iItem').value = ''; $('iAmount').value = ''; $('iNote').value = ''; $('iDate').value = todayStr();
     renderExpenses();
   });
 });
@@ -2186,7 +2187,7 @@ $('expForm').addEventListener('submit', function(ev){
   run('addExpense', [e], function(){
     invalidateDataCache();
     toast('✅ ບັນທຶກລາຍຈ່າຍແລ້ວ');
-    $('eItem').value = ''; $('eAmount').value = ''; $('eNote').value = '';
+    $('eItem').value = ''; $('eAmount').value = ''; $('eNote').value = ''; $('eDate').value = todayStr();
     renderExpenses();
   });
 });
@@ -2395,7 +2396,7 @@ function shiftDashPeriod(delta){
 /* ມື້ທີ່ລົງບັນຊີແລ້ວ ແລະ ຍອດສົດ/ໂອນທີ່ລົງໄວ້ ຍັງກົງກັບຍອດຂາຍ+ລາຍຮັບຂອງມື້ນັ້ນ (ຖ້າມີການຂາຍເພີ່ມຫຼັງລົງບັນຊີ ຖືວ່າຍັງບໍ່ໄດ້ລົງ) */
 function closedDaySet(data, branchId){
   var calc = {};
-  var add = function(d, c, t){ calc[d] = calc[d] || { cash: 0, transfer: 0 }; calc[d].cash += c; calc[d].transfer += t; };
+  var add = function(d, c, t){ calc[d] = calc[d] || { cash: 0, transfer: 0, exp: 0 }; calc[d].cash += c; calc[d].transfer += t; };
   (data.sales || []).forEach(function(s){
     if (s.BranchID !== branchId) return;
     if (s.PaymentType === 'split') add(s.Date, Number(s.CashAmount) || 0, Number(s.TransferAmount) || 0);
@@ -2407,11 +2408,16 @@ function closedDaySet(data, branchId){
     if (e.PaymentType === 'cash') add(e.Date, Number(e.Amount) || 0, 0);
     else if (e.PaymentType === 'transfer') add(e.Date, 0, Number(e.Amount) || 0);
   });
+  (data.expenses || []).forEach(function(e){
+    if (e.BranchID !== branchId) return;
+    calc[e.Date] = calc[e.Date] || { cash: 0, transfer: 0, exp: 0 };
+    calc[e.Date].exp += Number(e.Amount) || 0;
+  });
   var out = {};
   (data.closings || []).forEach(function(c){
     if (c.BranchID !== branchId) return;
-    var m = calc[c.Date] || { cash: 0, transfer: 0 };
-    if (Math.round(Number(c.Cash) || 0) === Math.round(m.cash) && Math.round(Number(c.Transfer) || 0) === Math.round(m.transfer)) out[c.Date] = true;
+    var m = calc[c.Date] || { cash: 0, transfer: 0, exp: 0 };
+    if (Math.round(Number(c.Cash) || 0) === Math.round(m.cash) && Math.round(Number(c.Transfer) || 0) === Math.round(m.transfer) && Math.round(Number(c.Expense) || 0) === Math.round(m.exp)) out[c.Date] = true;
   });
   return out;
 }
@@ -2613,7 +2619,7 @@ function renderSummary(){
 
     var dm = map[dayKey] || { cash: 0, transfer: 0, exp: 0 };
     /* ຮັບເງິນ = ຄຳນວນຈາກຍອດຂາຍ/ລາຍຮັບອັດຕະໂນມັດ (ບໍ່ຕ້ອງພິມ) — ລົງບັນຊີດ້ວຍຕົວເລກນີ້ສະເໝີ */
-    STATE.closeDayCalc = { cash: dm.cash, transfer: dm.transfer };
+    STATE.closeDayCalc = { cash: dm.cash, transfer: dm.transfer, exp: dm.exp };
     $('closeIncomeInfo').innerHTML = '<div class="ci"><div class="k">💵 ຮັບເງິນສົດ</div><div class="v">' + fmt(dm.cash) + ' ກີບ</div></div>' +
       '<div class="ci"><div class="k">🏦 ຮັບເງິນໂອນ</div><div class="v">' + fmt(dm.transfer) + ' ກີບ</div></div>' +
       '<div class="hint">ຄຳນວນອັດຕະໂນມັດຈາກຍອດຂາຍ ແລະ ລາຍຮັບຂອງມື້ນີ້</div>';
@@ -2623,7 +2629,7 @@ function renderSummary(){
     $('closeSection').style.display = '';
     var closeClosedSummary = $('closeClosedSummary');
     if (dayClosing) {
-      var closedMismatch = (Math.round(Number(dayClosing.Cash)) !== Math.round(dm.cash)) || (Math.round(Number(dayClosing.Transfer)) !== Math.round(dm.transfer));
+      var closedMismatch = (Math.round(Number(dayClosing.Cash)) !== Math.round(dm.cash)) || (Math.round(Number(dayClosing.Transfer)) !== Math.round(dm.transfer)) || (Math.round(Number(dayClosing.Expense) || 0) !== Math.round(dm.exp));
       if (closedMismatch) {
         /* ມີຂໍ້ມູນໃໝ່ (ຂາຍ/ຍົກເລີກ) ເກີດຂຶ້ນຫຼັງປິດບັນຊີ — ສະແດງຟອມຄືນເພື່ອໃຫ້ກວດ ແລະລົງບັນຊີຄືນ */
         $('closeCash').value = fmt(dm.cash);
