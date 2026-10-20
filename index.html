@@ -631,6 +631,14 @@ body:not(.role-admin) .admin-only{display:none !important}
 </table>
 </div>
 <div class="empty" id="dashEmpty" style="display:none">ຍັງບໍ່ມີຂໍ້ມູນ</div>
+<div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;margin-top:16px">📋 ຍອດຂາຍແຕ່ລະເມນູ</div>
+<div class="tbl-scroll">
+<table>
+<thead><tr><th>ເມນູ</th><th style="text-align:right">ຈຳນວນ</th><th style="text-align:right">ຍອດຂາຍ</th></tr></thead>
+<tbody id="dashProductBody"></tbody>
+</table>
+</div>
+<div class="empty" id="dashProductEmpty" style="display:none">ຍັງບໍ່ມີການຂາຍ</div>
 </div>
 </section>
 
@@ -2871,6 +2879,27 @@ function renderDashboard(){
       body.appendChild(tr);
     });
     $('dashEmpty').style.display = cats.length ? 'none' : 'block';
+
+    /* ອັບເດດຮອບ 17: ລາຍງານຍອດຂາຍແຕ່ລະເມນູ (ຈຳນວນ + ຍອດຂາຍ) ໃນໄລຍະເວລາທີ່ເລືອກ, ຮຽງລຳດັບຕາມຈຳນວນຂາຍຫຼາຍສຸດ */
+    var productSales = {};
+    cur.sales.forEach(function(s){
+      (itemsBySale[s.ID] || []).forEach(function(it){
+        var pid = it.ProductID;
+        if (!productSales[pid]) productSales[pid] = { name: it.ProductName || 'ບໍ່ມີຊື່', qty: 0, total: 0 };
+        productSales[pid].qty += Number(it.Qty) || 0;
+        productSales[pid].total += Number(it.LineTotal) || 0;
+      });
+    });
+    var prodList = Object.keys(productSales).map(function(pid){ return productSales[pid]; });
+    prodList.sort(function(a, b){ return b.qty - a.qty; });
+    var prodBody = $('dashProductBody');
+    prodBody.innerHTML = '';
+    prodList.forEach(function(p){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + escapeHtml(p.name) + '</td><td class="num">' + fmt(p.qty) + '</td><td class="num" style="color:var(--in)">' + fmt(p.total) + '</td>';
+      prodBody.appendChild(tr);
+    });
+    $('dashProductEmpty').style.display = prodList.length ? 'none' : 'block';
   });
 }
 /* ---------- ກຣາບວົງມົນ ສັດສ່ວນລາຍຮັບຕາມໝວດສິນຄ້າ (ອັບເດດຮອບ 8) ---------- */
