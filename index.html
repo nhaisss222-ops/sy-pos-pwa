@@ -73,6 +73,9 @@ input:focus,select:focus,textarea:focus{outline:2px solid #0f7a5a33;border-color
 .chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;cursor:pointer;color:var(--muted)}
 .chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.offline-banner{display:none;align-items:center;gap:8px;padding:8px 14px;font-size:13px;font-weight:600;text-align:center;justify-content:center;color:#9a3412;background:#fdece4;border-bottom:1px solid #f3cbb2}
+.offline-banner.show{display:flex}
+.offline-banner.syncing{color:#1d4ed8;background:#e8eefc;border-color:#c7d7f7}
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
 .pcard{position:relative;border:1px solid var(--line);border-radius:14px;padding:0;background:#fff;cursor:pointer;text-align:center;overflow:hidden;display:flex;flex-direction:column}
 .pcard:hover{border-color:var(--accent)}
@@ -304,6 +307,7 @@ body:not(.role-admin) .admin-only{display:none !important}
 </div>
 </div>
 </header>
+<div class="offline-banner" id="offlineBanner"></div>
 <div class="sticky-head">
 <div class="tabs" id="tabs">
 <button class="on" data-tab="pos">🛒 ຂາຍເຄື່ອງ</button>
@@ -606,9 +610,9 @@ body:not(.role-admin) .admin-only{display:none !important}
 <h2>📈 Dashboard ລົງບັນຊີ <span class="chip" id="dashBranchChip" style="cursor:default"></span></h2>
 <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px">
 <div class="row" style="align-items:center;gap:6px;flex:1;min-width:0">
-<button type="button" class="btn ghost sm" id="dashMonthPrevBtn" title="ເດືອນກ່ອນ" style="display:none;padding:7px 10px;flex:none">◀</button>
+<button type="button" class="btn ghost sm" id="dashPeriodPrevBtn" title="ກ່ອນໜ້າ" style="display:none;padding:7px 10px;flex:none">◀</button>
 <div style="font-size:13.5px;font-weight:700;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="dashPeriodLabel"></div>
-<button type="button" class="btn ghost sm" id="dashMonthNextBtn" title="ເດືອນຕໍ່ໄປ" style="display:none;padding:7px 10px;flex:none">▶</button>
+<button type="button" class="btn ghost sm" id="dashPeriodNextBtn" title="ຕໍ່ໄປ" style="display:none;padding:7px 10px;flex:none">▶</button>
 </div>
 <button type="button" class="btn ghost" id="dashPeriodBtn" style="padding:8px 14px;flex:0 0 auto">🗓️ ເລືອກໄລຍະເວລາ</button>
 </div>
@@ -915,7 +919,11 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyd7PCqS6S62VdY6OBoMv7_Kg
    ແທນທີ່ຈະຄ້າງລໍບໍ່ມີກຳນົດ (ແກ້ບັນຫາ "ກົດແລ້ວຄ້າງ" ເວລາເຄືອຂ່າຍ/server ຊ້າຫຼືບໍ່ຕອບ) */
 var REQUEST_TIMEOUT_MS = 30000;
 
-function run(fnName, args, onOk, onFail){
+/* ອັບເດດຮອບ 16: ເພີ່ມ opts.silentNetworkError (ບໍ່ສະແດງ toast ເວລາເນັດຂາດ ເພາະຜູ້ເອີ້ນຈະຈັດການເອງ ເຊັ່ນ ບັນທຶກລໍຖ້າສົ່ງ)
+   ແລະ onFail ຕອນນີ້ຮັບ argument ທີ 2 (isNetworkErr=true) ເພື່ອໃຫ້ຜູ້ເອີ້ນແຍກອອກລະຫວ່າງ "ເນັດ/server ຂາດ" (ຄວນເກັບລໍຖ້າສົ່ງໄດ້)
+   ກັບ "server ຕອບ error ທຸລະກິດ" (ຂໍ້ມູນຜິດ, ບໍ່ຄວນສົ່ງຊ້ຳ) */
+function run(fnName, args, onOk, onFail, opts){
+  opts = opts || {};
   setBusy(true);
   var timedOut = false;
   var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
@@ -931,15 +939,15 @@ function run(fnName, args, onOk, onFail){
       clearTimeout(timer);
       setBusy(false);
       if (res && res.ok) { if (onOk) onOk(res.result); }
-      else if (res && res.auth) { endSession(); showLogin(res.error); if (onFail) onFail(res.error); }
-      else { var msg = (res && res.error) || 'ມີຂໍ້ຜິດພາດ'; toast('❌ ' + msg); if (onFail) onFail(msg); }
+      else if (res && res.auth) { endSession(); showLogin(res.error); if (onFail) onFail(res.error, false); }
+      else { var msg = (res && res.error) || 'ມີຂໍ້ຜິດພາດ'; toast('❌ ' + msg); if (onFail) onFail(msg, false); }
     })
     .catch(function(err){
       clearTimeout(timer);
       setBusy(false);
       var msg = timedOut ? 'ເຊື່ອມຕໍ່ຊ້າເກີນໄປ, ກະລຸນາລອງໃໝ່' : (err && err.message ? err.message : err);
-      toast('❌ ' + msg);
-      if (onFail) onFail(msg);
+      if (!opts.silentNetworkError) toast('❌ ' + msg);
+      if (onFail) onFail(msg, true);
     });
 }
 
@@ -1129,7 +1137,7 @@ function saveCachedBootstrap(data){
 }
 
 function reloadAll(after){
-  run('getBootstrap', [], function(data){ onBoot(data); saveCachedBootstrap(data); if (after) after(); });
+  run('getBootstrap', [], function(data){ onBoot(data); saveCachedBootstrap(data); syncOfflineQueue(); if (after) after(); });
 }
 
 /** ຈື່ຊື່ພະນັກງານທີ່ເລືອກລ່າສຸດໄວ້ຢູ່ເຄື່ອງ (ໂທລະສັບ/browser) ນີ້ ເພື່ອບໍ່ຕ້ອງເລືອກຊ້ຳທຸກຄັ້ງທີ່ຂາຍ */
@@ -1143,6 +1151,88 @@ function loadSavedEmployee(){
 function saveSelectedEmployee(shopId, employeeId){
   try { localStorage.setItem(SAVED_EMPLOYEE_KEY, JSON.stringify({ shopId: shopId, employeeId: employeeId })); } catch (e) {}
 }
+
+/* ---------- ອັບເດດຮອບ 16: ຂາຍເຄື່ອງແບບ offline ----------
+   ຖ້າເນັດຂາດຕອນກົດຂາຍ (ຫຼື server ຕິດຕໍ່ບໍ່ໄດ້) ບັນທຶກລາຍການຂາຍໄວ້ໃນເຄື່ອງ (localStorage) ແທນ ແລ້ວສົ່ງເຂົ້າ
+   server ອັດຕະໂນມັດທັນທີທີ່ເນັດກັບມາ. ແຕ່ລະລາຍການມີ clientId ຄົງທີ່ຕິດໄປນຳ (ບໍ່ປ່ຽນເວລາສົ່ງຊ້ຳ) — ຝັ່ງ
+   Code.gs ຈະກວດ clientId ນີ້ກ່ອນບັນທຶກ ຖ້າເຄີຍບັນທຶກລາຍການນີ້ແລ້ວຈະສົ່ງຜົນເກົ່າຄືນ ບໍ່ສ້າງລາຍການຊ້ຳ —
+   ສະນັ້ນສົ່ງຊ້ຳໄດ້ປອດໄພ (ສຳຄັນ ເພາະ fetch ອາດຂາດຕອນຫຼັງ server ບັນທຶກແລ້ວແຕ່ກ່ອນຄຳຕອບມາຮອດ) */
+var OFFLINE_QUEUE_KEY = 'syposOfflineSaleQueueV1';
+function loadOfflineQueue(){
+  try { var raw = localStorage.getItem(OFFLINE_QUEUE_KEY); return raw ? JSON.parse(raw) : []; } catch (e) { return []; }
+}
+function saveOfflineQueue(){
+  try { localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(STATE.offlineQueue)); } catch (e) {}
+}
+STATE.offlineQueue = loadOfflineQueue();
+
+function genClientId(){
+  return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+}
+/* queue ລາຍການ (ບໍ່ສະເພາະ recordSale) — ໃຊ້ fn+args ແບບດຽວກັບ run() ເລີຍ ເພື່ອໃຫ້ຮອງຮັບ follow-up call
+   ເຊັ່ນ deleteHeldBill ຫຼັງຂາຍບິນທີ່ສືບມາຈາກ "ບິນລໍຖ້າ" ໄດ້ນຳ (ຮຽງຕາມລຳດັບທີ່ສົ່ງເຂົ້າຄິວ) */
+function queueOfflineCall(fn, args){
+  STATE.offlineQueue.push({ fn: fn, args: args, queuedAt: Date.now() });
+  saveOfflineQueue();
+  renderOfflineBanner();
+}
+function renderOfflineBanner(){
+  var el = $('offlineBanner');
+  if (!el) return;
+  var n = STATE.offlineQueue.length;
+  var online = navigator.onLine;
+  if (n > 0) {
+    el.className = 'offline-banner show' + (online ? ' syncing' : '');
+    el.textContent = online
+      ? ('🔄 ກຳລັງສົ່ງລາຍການຂາຍທີ່ຄ້າງໄວ້... (' + n + ' ລາຍການ)')
+      : ('📴 ອອບລາຍ — ມີ ' + n + ' ລາຍການຂາຍລໍຖ້າສົ່ງ, ຈະສົ່ງອັດຕະໂນມັດເມື່ອເນັດກັບມາ');
+  } else if (!online) {
+    el.className = 'offline-banner show';
+    el.textContent = '📴 ອອບລາຍ — ຍັງຂາຍເຄື່ອງໄດ້ປົກກະຕິ, ຈະສົ່ງເຂົ້າລະບົບອັດຕະໂນມັດເມື່ອເນັດກັບມາ';
+  } else {
+    el.className = 'offline-banner';
+    el.textContent = '';
+  }
+}
+var OFFLINE_SYNC_BUSY_ = false;
+function syncOfflineQueue(){
+  if (OFFLINE_SYNC_BUSY_) return;
+  if (!STATE.offlineQueue.length) { renderOfflineBanner(); return; }
+  if (!navigator.onLine) { renderOfflineBanner(); return; }
+  if (!SESSION || !SESSION.token) return;
+  OFFLINE_SYNC_BUSY_ = true;
+  renderOfflineBanner();
+  var item = STATE.offlineQueue[0];
+  run(item.fn, item.args, function(){
+    STATE.offlineQueue.shift();
+    saveOfflineQueue();
+    OFFLINE_SYNC_BUSY_ = false;
+    invalidateDataCache();
+    if (STATE.offlineQueue.length) {
+      syncOfflineQueue();
+    } else {
+      renderOfflineBanner();
+      toast('✅ ສົ່ງລາຍການຂາຍທີ່ຄ້າງໄວ້ເຂົ້າລະບົບຄົບແລ້ວ');
+      renderTodaySales();
+      if (document.querySelector('#tabs button.on[data-tab="dashboard"]')) renderDashboard();
+      if (document.querySelector('#tabs button.on[data-tab="summary"]')) renderPeriodCards();
+    }
+  }, function(msg, isNetworkErr){
+    OFFLINE_SYNC_BUSY_ = false;
+    if (isNetworkErr) { renderOfflineBanner(); return; } /* ຍັງອອບລາຍຢູ່ — ລໍຖ້າ sync ຄັ້ງຕໍ່ໄປ */
+    /* server ຕອບ error ທຸລະກິດ (ບໍ່ແມ່ນເນັດຂາດ) — ລຶບລາຍການນີ້ອອກຈາກຄິວ (ບໍ່ຄືນຄືນຕະຫຼອດໄປ) ເພື່ອບໍ່ໃຫ້
+       ລາຍການອື່ນທີ່ຄ້າງຕໍ່ຈາກມັນຕິດຄ້າງໄປນຳ, ແລ້ວແຈ້ງເຕືອນໃຫ້ກວດດ້ວຍຕາ */
+    STATE.offlineQueue.shift();
+    saveOfflineQueue();
+    renderOfflineBanner();
+    toast('⚠️ ລາຍການລໍຖ້າສົ່ງ 1 ລາຍການບໍ່ສຳເລັດ: ' + msg);
+    if (STATE.offlineQueue.length) syncOfflineQueue();
+  }, { silentNetworkError: true });
+}
+window.addEventListener('online', function(){ renderOfflineBanner(); syncOfflineQueue(); });
+window.addEventListener('offline', function(){ renderOfflineBanner(); });
+setInterval(function(){ if (navigator.onLine) syncOfflineQueue(); }, 20000);
+renderOfflineBanner();
 
 /** ຕອນເປີດແອັບຄັ້ງທຳອິດ: ສະແດງຂໍ້ມູນເກົ່າທີ່ແຄັດໄວ້ (localStorage) ທັນທີ ລະຫວ່າງລໍຖ້າ server ຕອບກັບ ເພື່ອໃຫ້ຮູ້ສຶກໄວຂຶ້ນ ແລ້ວຄ່ອຍອັບເດດເປັນຂໍ້ມູນໃໝ່ເມື່ອມາຮອດ */
 function bootFromCacheThenNetwork(){
@@ -1605,9 +1695,12 @@ $('checkoutBtn').addEventListener('click', function(){
     sale.cashAmount = cashAmt;
     sale.transferAmount = transferAmt;
   }
-  run('recordSale', [sale], function(res){
-    invalidateDataCache();
-    toast('✅ ຂາຍສຳເລັດ ' + fmt(res.total) + ' ກີບ');
+  /* clientId ຄົງທີ່ ໃຊ້ໃຫ້ server (Code.gs) ກັນການບັນທຶກຊ້ຳ — ສຳຄັນສຳລັບທັງກໍລະນີສົ່ງອອບລາຍ ແລະ ກໍລະນີ fetch
+     ຂາດຕອນຫຼັງ server ບັນທຶກແລ້ວແຕ່ຄຳຕອບບໍ່ມາຮອດ (ບໍ່ງັ້ນການລອງໃໝ່ຈະສ້າງບິນຊ້ຳ) */
+  sale.clientId = genClientId();
+  var heldIdToClear = STATE.resumingHeldBillId;
+
+  function finishCheckoutUI(){
     items.forEach(function(it){ adjustLocalStock(STATE.currentBranch, it.productId, -it.qty); });
     STATE.cart = [];
     $('saleNote').value = '';
@@ -1619,12 +1712,31 @@ $('checkoutBtn').addEventListener('click', function(){
     renderCart();
     renderPOS();
     bumpPaidTodayCount(1);
-    if (STATE.resumingHeldBillId) {
-      var heldId = STATE.resumingHeldBillId;
-      STATE.resumingHeldBillId = null;
-      run('deleteHeldBill', [heldId], function(){ refreshHeldBills(); });
+    STATE.resumingHeldBillId = null;
+    if (heldIdToClear) {
+      if (navigator.onLine) run('deleteHeldBill', [heldIdToClear], function(){ refreshHeldBills(); });
+      else queueOfflineCall('deleteHeldBill', [heldIdToClear]);
     }
-  });
+  }
+
+  if (!navigator.onLine) {
+    queueOfflineCall('recordSale', [sale]);
+    invalidateDataCache();
+    toast('📴 ອອບລາຍ — ບັນທຶກລາຍການຂາຍລໍຖ້າສົ່ງ (' + fmt(finalCartTotal()) + ' ກີບ)');
+    finishCheckoutUI();
+    return;
+  }
+  run('recordSale', [sale], function(res){
+    invalidateDataCache();
+    toast('✅ ຂາຍສຳເລັດ ' + fmt(res.total) + ' ກີບ');
+    finishCheckoutUI();
+  }, function(msg, isNetworkErr){
+    if (!isNetworkErr) return; /* error ທຸລະກິດ: run() ສະແດງ toast ແລ້ວ, ປ່ອຍໃຫ້ຜູ້ໃຊ້ແກ້ໄຂແລ້ວກົດຂາຍໃໝ່ */
+    queueOfflineCall('recordSale', [sale]);
+    invalidateDataCache();
+    toast('📴 ສົ່ງບໍ່ໄດ້ (ເນັດຂາດ) — ບັນທຶກລາຍການຂາຍລໍຖ້າສົ່ງ (' + fmt(finalCartTotal()) + ' ກີບ)');
+    finishCheckoutUI();
+  }, { silentNetworkError: true });
 });
 
 /* ---------- today sales / ບິນຈ່າຍແລ້ວ ---------- */
@@ -2223,6 +2335,54 @@ function shiftDashMonth(delta){
   STATE.dashPeriod = { type: 'month', from: range.from, to: range.to };
   renderDashboard();
 }
+/* ອັບເດດຮອບ 16: ລູກສອນ ◀/▶ ເລື່ອນໄລຍະເວລາຂອງ Dashboard ໃຊ້ໄດ້ທຸກແບບ (ມື້ນີ້/ອາທິດ/ເດືອນ/ປີ/ກຳນົດເອງ) ບໍ່ແມ່ນສະເພາະເດືອນອີກຕໍ່ໄປ */
+function shiftDashPeriod(delta){
+  var period = STATE.dashPeriod;
+  var type = period.type;
+  var todayP = todayStr();
+  if (type === 'month') { shiftDashMonth(delta); return; }
+  if (type === 'today') {
+    var d = parseDateStr(period.from);
+    var nd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta);
+    var ndStr = fmtDateStr(nd);
+    if (ndStr > todayP) return; /* ຫ້າມເລື່ອນໄປອະນາຄົດ */
+    STATE.dashPeriod = { type: 'today', from: ndStr, to: ndStr };
+    renderDashboard();
+    return;
+  }
+  if (type === 'week') {
+    var pf = parseDateStr(period.from);
+    var nf = new Date(pf.getFullYear(), pf.getMonth(), pf.getDate() + delta * 7);
+    var nfStr = fmtDateStr(nf);
+    if (nfStr > todayP) return;
+    var nt = new Date(nf.getFullYear(), nf.getMonth(), nf.getDate() + 6);
+    var ntStr = fmtDateStr(nt);
+    if (ntStr > todayP) ntStr = todayP;
+    STATE.dashPeriod = { type: 'week', from: nfStr, to: ntStr };
+    renderDashboard();
+    return;
+  }
+  if (type === 'year') {
+    var y = Number(period.from.split('-')[0]) + delta;
+    var curY = Number(todayP.split('-')[0]);
+    if (y > curY) return;
+    var from = y + '-01-01';
+    var to = (y === curY) ? todayP : (y + '-12-31');
+    STATE.dashPeriod = { type: 'year', from: from, to: to };
+    renderDashboard();
+    return;
+  }
+  /* custom: ເລື່ອນທັງຊ່ວງໄປທາງໜ້າ/ຫຼັງ ຕາມຄວາມຍາວຂອງຊ່ວງທີ່ເລືອກໄວ້ ເພື່ອບໍ່ໃຫ້ຄາບກັນ */
+  var len = daysBetweenStr(period.from, period.to) + 1;
+  var pf2 = parseDateStr(period.from), pt2 = parseDateStr(period.to);
+  var nf2 = new Date(pf2.getFullYear(), pf2.getMonth(), pf2.getDate() + delta * len);
+  var nt2 = new Date(pt2.getFullYear(), pt2.getMonth(), pt2.getDate() + delta * len);
+  var nf2Str = fmtDateStr(nf2), nt2Str = fmtDateStr(nt2);
+  if (nf2Str > todayP) return;
+  if (nt2Str > todayP) nt2Str = todayP;
+  STATE.dashPeriod = { type: 'custom', from: nf2Str, to: nt2Str };
+  renderDashboard();
+}
 
 /* ມື້ທີ່ລົງບັນຊີແລ້ວ ແລະ ຍອດສົດ/ໂອນທີ່ລົງໄວ້ ຍັງກົງກັບຍອດຂາຍ+ລາຍຮັບຂອງມື້ນັ້ນ (ຖ້າມີການຂາຍເພີ່ມຫຼັງລົງບັນຊີ ຖືວ່າຍັງບໍ່ໄດ້ລົງ) */
 function closedDaySet(data, branchId){
@@ -2307,8 +2467,8 @@ function openPeriodModal(target){
 }
 $('sumPeriodBtn').addEventListener('click', function(){ openPeriodModal('summary'); });
 $('dashPeriodBtn').addEventListener('click', function(){ openPeriodModal('dashboard'); });
-$('dashMonthPrevBtn').addEventListener('click', function(){ shiftDashMonth(-1); });
-$('dashMonthNextBtn').addEventListener('click', function(){ shiftDashMonth(1); });
+$('dashPeriodPrevBtn').addEventListener('click', function(){ shiftDashPeriod(-1); });
+$('dashPeriodNextBtn').addEventListener('click', function(){ shiftDashPeriod(1); });
 $('periodCancelBtn').addEventListener('click', function(){ $('periodModal').classList.remove('show'); });
 document.querySelectorAll('input[name="periodOpt"]').forEach(function(r){
   r.addEventListener('change', function(){
@@ -2644,13 +2804,18 @@ function renderDashboard(){
     periodTitle = 'ເດືອນ' + (LAO_MONTH_NAMES[mk0.m - 1] || mk0.m) + ' ' + mk0.y;
   }
   $('dashPeriodLabel').textContent = '📈 ' + periodTitle + ' (' + rangeLabel + ')';
-  $('dashMonthPrevBtn').style.display = isMonthPeriod ? 'inline-block' : 'none';
-  $('dashMonthNextBtn').style.display = isMonthPeriod ? 'inline-block' : 'none';
+  /* ອັບເດດຮອບ 16: ລູກສອນ ◀/▶ ສະແດງໃຫ້ທຸກແບບໄລຍະເວລາ (ບໍ່ສະເພາະເດືອນ) */
+  $('dashPeriodPrevBtn').title = { today: 'ມື້ກ່ອນ', week: 'ອາທິດກ່ອນ', month: 'ເດືອນກ່ອນ', year: 'ປີກ່ອນ', custom: 'ຊ່ວງກ່ອນໜ້າ' }[period.type] || 'ກ່ອນໜ້າ';
+  $('dashPeriodNextBtn').title = { today: 'ມື້ຕໍ່ໄປ', week: 'ອາທິດຕໍ່ໄປ', month: 'ເດືອນຕໍ່ໄປ', year: 'ປີຕໍ່ໄປ', custom: 'ຊ່ວງຕໍ່ໄປ' }[period.type] || 'ຕໍ່ໄປ';
+  $('dashPeriodPrevBtn').style.display = 'inline-block';
+  $('dashPeriodNextBtn').style.display = 'inline-block';
   if (isMonthPeriod) {
     var mk1 = monthKeyOf(period.from);
     var todayP1 = todayStr().split('-');
     var isCurMonth = (mk1.y === Number(todayP1[0]) && mk1.m === Number(todayP1[1]));
-    $('dashMonthNextBtn').disabled = isCurMonth;
+    $('dashPeriodNextBtn').disabled = isCurMonth;
+  } else {
+    $('dashPeriodNextBtn').disabled = (period.to === todayStr());
   }
   var prev = previousPeriodRange(period.from, period.to);
   var earliest = prev.from < period.from ? prev.from : period.from;
