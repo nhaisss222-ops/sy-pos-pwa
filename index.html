@@ -1247,11 +1247,18 @@ renderOfflineBanner();
 
 /** ຕອນເປີດແອັບຄັ້ງທຳອິດ: ສະແດງຂໍ້ມູນເກົ່າທີ່ແຄັດໄວ້ (localStorage) ທັນທີ ລະຫວ່າງລໍຖ້າ server ຕອບກັບ ເພື່ອໃຫ້ຮູ້ສຶກໄວຂຶ້ນ ແລ້ວຄ່ອຍອັບເດດເປັນຂໍ້ມູນໃໝ່ເມື່ອມາຮອດ
     (ອັບເດດຮອບ 14: ຖ້າມີຂໍ້ມູນແຄັດໃຫ້ໃຊ້ງານໄດ້ທັນທີແລ້ວ — ການດຶງຂໍ້ມູນໃໝ່ເບື້ອງຫຼັງນີ້ແລ່ນແບບ silent
-    (ບໍ່ມືດໜ້າຈໍ/ບໍ່ສະແດງ spinner) ເພື່ອໃຫ້ຜູ້ໃຊ້ກົດໃຊ້ແອັບໄດ້ເລີຍລະຫວ່າງລໍ server ຊ້າ) */
+    (ບໍ່ມືດໜ້າຈໍ/ບໍ່ສະແດງ spinner) ເພື່ອໃຫ້ຜູ້ໃຊ້ກົດໃຊ້ແອັບໄດ້ເລີຍລະຫວ່າງລໍ server ຊ້າ. ແລະ ປຽບທຽບຂໍ້ມູນໃໝ່
+    ກັບຂໍ້ມູນແຄັດກ່ອນ — ຖ້າຄືກັນເປັະ ຈະບໍ່ render ຊ້ຳ (ແກ້ "ມັນໂຫຼດ 2 ເທື່ອຕອນເຂົ້າແອັບ": ໜ້າຈໍເຄີຍວາບ/
+    render ຄືນທຸກຄັ້ງເຖິງຂໍ້ມູນຈະຄືເກົ່າ 100% ກໍ່ຕາມ, render ຄືນສະເພາະເວລາຂໍ້ມູນປ່ຽນແທ້) */
 function bootFromCacheThenNetwork(){
   var cached = loadCachedBootstrap();
-  if (cached) { try { onBoot(cached); } catch (e) {} }
-  reloadAll(null, { silent: !!cached });
+  var cachedStr = null;
+  if (cached) { try { onBoot(cached); cachedStr = JSON.stringify(cached); } catch (e) {} }
+  run('getBootstrap', [], function(data){
+    if (JSON.stringify(data) !== cachedStr) onBoot(data);
+    saveCachedBootstrap(data);
+    syncOfflineQueue();
+  }, null, { silent: !!cached });
 }
 
 /* ---------- stock lookup ---------- */

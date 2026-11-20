@@ -1,4 +1,4 @@
-var CACHE_NAME = 'sy-pos-shell-v7';
+var CACHE_NAME = 'sy-pos-shell-v8';
 var SHELL_FILES = [
   './manifest.json',
   './icon-192.png',
@@ -35,17 +35,24 @@ self.addEventListener('fetch', function(event){
   var url = event.request.url;
   if (url.indexOf('script.google.com') !== -1) return; // ປ່ອຍຜ່ານ, ບໍ່ແຊກແຊງ
 
-  // ໜ້າຫຼັກ (index.html): ເອົາເຄືອຂ່າຍກ່ອນສະເໝີ ເພື່ອບໍ່ໃຫ້ຕິດແຄັດໜ້າເກົ່າເມື່ອອັບເດດແອັບ, offline ຄ່ອຍໃຊ້ cache
+  // ອັບເດດຮອບ 14: ໜ້າຫຼັກ (index.html) ປ່ຽນຈາກ network-first ເປັນ stale-while-revalidate —
+  // ຖ້າມີແຄັດຢູ່ແລ້ວ ສົ່ງແຄັດນັ້ນກັບຄືນທັນທີ (ເປີດແອັບໄວ ບໍ່ລໍເຄືອຂ່າຍ, ແກ້ "ບໍ່ໂຫຼດດົນ") ແລ້ວຄ່ອຍດຶງ
+  // ອັນໃໝ່ຈາກເຄືອຂ່າຍເບື້ອງຫຼັງມາອັບເດດແຄັດໄວ້ໃຊ້ຄັ້ງຕໍ່ໄປ (ອາດເຫັນເວີຊັນເກົ່າ 1 ຄັ້ງຫຼັງ deploy ໃໝ່
+  // ແລ້ວຄ່ອຍທັນ — ແລກກັບການເປີດໄວທຸກຄັ້ງ). ຖ້າຍັງບໍ່ມີແຄັດ (ເປີດຄັ້ງທຳອິດ) ລໍເຄືອຂ່າຍຄືເກົ່າ.
   if (event.request.mode === 'navigate' || isNetworkFirst(url)) {
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' }).then(function(resp){
-        if (resp && resp.status === 200) {
-          var respClone = resp.clone();
-          caches.open(CACHE_NAME).then(function(cache){ cache.put(event.request, respClone); });
-        }
-        return resp;
-      }).catch(function(){
-        return caches.match(event.request).then(function(cached){ return cached || caches.match('./index.html'); });
+      caches.match(event.request).then(function(cached){
+        var network = fetch(event.request, { cache: 'no-store' }).then(function(resp){
+          if (resp && resp.status === 200) {
+            var respClone = resp.clone();
+            caches.open(CACHE_NAME).then(function(cache){ cache.put(event.request, respClone); });
+          }
+          return resp;
+        }).catch(function(){
+          return cached || caches.match('./index.html');
+        });
+        if (cached) { event.waitUntil(network); return cached; }
+        return network;
       })
     );
     return;
