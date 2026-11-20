@@ -930,9 +930,12 @@ var REQUEST_TIMEOUT_MS = 30000;
 /* ອັບເດດຮອບ 16: ເພີ່ມ opts.silentNetworkError (ບໍ່ສະແດງ toast ເວລາເນັດຂາດ ເພາະຜູ້ເອີ້ນຈະຈັດການເອງ ເຊັ່ນ ບັນທຶກລໍຖ້າສົ່ງ)
    ແລະ onFail ຕອນນີ້ຮັບ argument ທີ 2 (isNetworkErr=true) ເພື່ອໃຫ້ຜູ້ເອີ້ນແຍກອອກລະຫວ່າງ "ເນັດ/server ຂາດ" (ຄວນເກັບລໍຖ້າສົ່ງໄດ້)
    ກັບ "server ຕອບ error ທຸລະກິດ" (ຂໍ້ມູນຜິດ, ບໍ່ຄວນສົ່ງຊ້ຳ) */
+/* ອັບເດດຮອບ 14: ເພີ່ມ opts.silent — ຂ້າມ setBusy() (ບໍ່ມືດໜ້າຈໍ/ບໍ່ສະແດງ spinner) ສຳລັບການເອີ້ນທີ່ແລ່ນ
+   ຢູ່ເບື້ອງຫຼັງໂດຍບໍ່ຕ້ອງການໃຫ້ຜູ້ໃຊ້ລໍ (ເຊັ່ນ ການດຶງຂໍ້ມູນໃໝ່ຫຼັງສະແດງຂໍ້ມູນທີ່ແຄັດໄວ້ແລ້ວຕອນເປີດແອັບ —
+   ແກ້ບັນຫາ "ໜ້າມັນໂຫຼດດົນ" ທີ່ໜ້າຈໍຄ້າງມືດຍ້ອນລໍ server ທັງໆທີ່ມີຂໍ້ມູນເກົ່າສະແດງຢູ່ແລ້ວໃຫ້ໃຊ້ງານໄດ້) */
 function run(fnName, args, onOk, onFail, opts){
   opts = opts || {};
-  setBusy(true);
+  if (!opts.silent) setBusy(true);
   var timedOut = false;
   var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
   var timer = setTimeout(function(){ timedOut = true; if (ctrl) ctrl.abort(); }, REQUEST_TIMEOUT_MS);
@@ -945,16 +948,16 @@ function run(fnName, args, onOk, onFail, opts){
     .then(function(r){ return r.json(); })
     .then(function(res){
       clearTimeout(timer);
-      setBusy(false);
+      if (!opts.silent) setBusy(false);
       if (res && res.ok) { if (onOk) onOk(res.result); }
       else if (res && res.auth) { endSession(); showLogin(res.error); if (onFail) onFail(res.error, false); }
-      else { var msg = (res && res.error) || 'ມີຂໍ້ຜິດພາດ'; toast('❌ ' + msg); if (onFail) onFail(msg, false); }
+      else { var msg = (res && res.error) || 'ມີຂໍ້ຜິດພາດ'; if (!opts.silent) toast('❌ ' + msg); if (onFail) onFail(msg, false); }
     })
     .catch(function(err){
       clearTimeout(timer);
-      setBusy(false);
+      if (!opts.silent) setBusy(false);
       var msg = timedOut ? 'ເຊື່ອມຕໍ່ຊ້າເກີນໄປ, ກະລຸນາລອງໃໝ່' : (err && err.message ? err.message : err);
-      if (!opts.silentNetworkError) toast('❌ ' + msg);
+      if (!opts.silentNetworkError && !opts.silent) toast('❌ ' + msg);
       if (onFail) onFail(msg, true);
     });
 }
@@ -1144,8 +1147,8 @@ function saveCachedBootstrap(data){
   try { localStorage.setItem(bootstrapCacheKey(), JSON.stringify(data)); } catch (e) {}
 }
 
-function reloadAll(after){
-  run('getBootstrap', [], function(data){ onBoot(data); saveCachedBootstrap(data); syncOfflineQueue(); if (after) after(); });
+function reloadAll(after, opts){
+  run('getBootstrap', [], function(data){ onBoot(data); saveCachedBootstrap(data); syncOfflineQueue(); if (after) after(); }, null, opts);
 }
 
 /** ຈື່ຊື່ພະນັກງານທີ່ເລືອກລ່າສຸດໄວ້ຢູ່ເຄື່ອງ (ໂທລະສັບ/browser) ນີ້ ເພື່ອບໍ່ຕ້ອງເລືອກຊ້ຳທຸກຄັ້ງທີ່ຂາຍ */
@@ -1242,11 +1245,13 @@ window.addEventListener('offline', function(){ renderOfflineBanner(); });
 setInterval(function(){ if (navigator.onLine) syncOfflineQueue(); }, 20000);
 renderOfflineBanner();
 
-/** ຕອນເປີດແອັບຄັ້ງທຳອິດ: ສະແດງຂໍ້ມູນເກົ່າທີ່ແຄັດໄວ້ (localStorage) ທັນທີ ລະຫວ່າງລໍຖ້າ server ຕອບກັບ ເພື່ອໃຫ້ຮູ້ສຶກໄວຂຶ້ນ ແລ້ວຄ່ອຍອັບເດດເປັນຂໍ້ມູນໃໝ່ເມື່ອມາຮອດ */
+/** ຕອນເປີດແອັບຄັ້ງທຳອິດ: ສະແດງຂໍ້ມູນເກົ່າທີ່ແຄັດໄວ້ (localStorage) ທັນທີ ລະຫວ່າງລໍຖ້າ server ຕອບກັບ ເພື່ອໃຫ້ຮູ້ສຶກໄວຂຶ້ນ ແລ້ວຄ່ອຍອັບເດດເປັນຂໍ້ມູນໃໝ່ເມື່ອມາຮອດ
+    (ອັບເດດຮອບ 14: ຖ້າມີຂໍ້ມູນແຄັດໃຫ້ໃຊ້ງານໄດ້ທັນທີແລ້ວ — ການດຶງຂໍ້ມູນໃໝ່ເບື້ອງຫຼັງນີ້ແລ່ນແບບ silent
+    (ບໍ່ມືດໜ້າຈໍ/ບໍ່ສະແດງ spinner) ເພື່ອໃຫ້ຜູ້ໃຊ້ກົດໃຊ້ແອັບໄດ້ເລີຍລະຫວ່າງລໍ server ຊ້າ) */
 function bootFromCacheThenNetwork(){
   var cached = loadCachedBootstrap();
   if (cached) { try { onBoot(cached); } catch (e) {} }
-  reloadAll();
+  reloadAll(null, { silent: !!cached });
 }
 
 /* ---------- stock lookup ---------- */
