@@ -1009,6 +1009,35 @@ function runCached(fnName, args, onOk, onFail){
 /** ລຶບ cache ທັງໝົດ — ເອີ້ນທຸກຄັ້ງຫຼັງມີການຂາຍ/ຍົກເລີກບິນ/ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ/ລົງບັນຊີ ເພື່ອໃຫ້ຂໍ້ມູນຮອບຕໍ່ໄປສົດສະເໝີ */
 function invalidateDataCache(){ DATA_CACHE_ = {}; }
 
+/* ---------- ອັບເດດຮອບ 17: ໜ້າ ສະຫຼຸບ/ລົງບັນຊີ/Dashboard/ບິນລໍຖ້າ/ບິນຈ່າຍແລ້ວ ຍັງຊ້າ ເພາະແຕ່ລະຄັ້ງທີ່ສະຫຼັບ
+   ໄປໜ້ານັ້ນ (ຖ້າເກີນ 20 ວິ ຫຼື ເປັນຄັ້ງທຳອິດ) ຕ້ອງລໍ server ຕອບກັບ (Apps Script ປົກກະຕິໃຊ້ 1-4 ວິນາທີ ຕໍ່ຄັ້ງ
+   ບໍ່ວ່າຂໍ້ມູນຈະໜ້ອຍປານໃດ — ເປັນຄ່າໃຊ້ຈ່າຍພື້ນຖານຂອງ Apps Script ເອງ) ແລະ ໜ້າຈໍຄ້າງລໍລະຫວ່າງນັ້ນ. ແກ້ແບບດຽວກັບ
+   bootFromCacheThenNetwork: ຈື່ຜົນຄັ້ງລ່າສຸດໄວ້ໃນເຄື່ອງ (localStorage) ແລ້ວສະແດງທັນທີ ບໍ່ລໍ server, ຄ່ອຍດຶງ
+   ຂໍ້ມູນໃໝ່ມາອັບເດດງຽບໆເບື້ອງຫຼັງ (ບໍ່ມືດໜ້າຈໍ), render ຄືນສະເພາະເວລາຂໍ້ມູນປ່ຽນແທ້ */
+function ledgerCacheKey_(fnName, args){
+  return 'syposLedgerCacheV1:' + (SESSION ? SESSION.user.id : '') + ':' + fnName + ':' + JSON.stringify(args || []);
+}
+function loadLedgerCache_(fnName, args){
+  try { var raw = localStorage.getItem(ledgerCacheKey_(fnName, args)); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+function saveLedgerCache_(fnName, args, data){
+  try { localStorage.setItem(ledgerCacheKey_(fnName, args), JSON.stringify(data)); } catch (e) {}
+}
+function runCachedThenRefresh(fnName, args, renderFn){
+  var key = fnName + ':' + JSON.stringify(args || []);
+  var memHit = DATA_CACHE_[key];
+  var memFresh = memHit && (Date.now() - memHit.ts) < DATA_CACHE_TTL_MS;
+  var cached = memFresh ? memHit.data : loadLedgerCache_(fnName, args);
+  var cachedStr = null;
+  if (cached) { try { renderFn(cached); cachedStr = JSON.stringify(cached); } catch (e) {} }
+  if (memFresh) return; // ຫາກໍ່ດຶງມາບໍ່ດົນ (ພາຍໃນ 20 ວິ) ບໍ່ຕ້ອງເອີ້ນ server ຊ້ຳ
+  run(fnName, args, function(data){
+    DATA_CACHE_[key] = { data: data, ts: Date.now() };
+    saveLedgerCache_(fnName, args, data);
+    if (JSON.stringify(data) !== cachedStr) renderFn(data);
+  }, null, { silent: !!cached });
+}
+
 /* ---------- tabs ---------- */
 document.querySelectorAll('#tabs button').forEach(function(btn){
   btn.addEventListener('click', function(){
@@ -1621,7 +1650,7 @@ $('closeCartBtn').addEventListener('click', function(){ $('cartModal').classList
 
 /* ---------- ບິນລໍຖ້າ (hold / park bill) ---------- */
 function refreshHeldBills(after){
-  run('getHeldBills', [], function(list){
+  runCachedThenRefresh('getHeldBills', [], function(list){
     STATE.heldBills = list || [];
     renderHeldChip();
     if (after) after();
@@ -1800,7 +1829,7 @@ function payIconFor(s){
   return s.PaymentType === 'cash' ? '💵' : (s.PaymentType === 'transfer' ? '🏦' : '🔀');
 }
 function renderTodaySales(){
-  runCached('getRecentData', [2], function(data){
+  runCachedThenRefresh('getRecentData', [2], function(data){
     var today = todayStr();
     var rows = data.sales.filter(function(s){ return s.Date === today && s.BranchID === STATE.currentBranch; });
     STATE.paidTodayCount = rows.length;
@@ -1827,7 +1856,7 @@ $('closePaidBillsBtn').addEventListener('click', function(){ $('paidBillsModal')
 function renderPaidBillsForSelectedDate(){
   var dateStr = $('paidBillsDate').value || todayStr();
   var daysBack = Math.max(2, daysBetweenStr(dateStr, todayStr()) + 2);
-  runCached('getRecentData', [daysBack], function(data){
+  runCachedThenRefresh('getRecentData', [daysBack], function(data){
     var rows = data.sales.filter(function(s){ return s.Date === dateStr && s.BranchID === STATE.currentBranch; });
     rows.sort(function(a, b){ return a.Time < b.Time ? 1 : -1; });
     var itemsBySale = {};
@@ -2267,7 +2296,7 @@ $('expForm').addEventListener('submit', function(ev){
 });
 
 function renderExpenses(){
-  runCached('getRecentData', [60], function(data){
+  runCachedThenRefresh('getRecentData', [60], function(data){
     var itemsBySale = {};
     data.items.forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
 
@@ -2562,7 +2591,7 @@ function renderPeriodCards(){
   var rangeLabel = (period.from === period.to) ? fmtDateLao(period.from) : (fmtDateLao(period.from) + ' - ' + fmtDateLao(period.to));
   $('sumPeriodLabel').textContent = '📊 ' + periodTypeLabel(period.type) + ' (' + rangeLabel + ')';
   var days = Math.max(2, daysBetweenStr(period.from, todayStr()) + 2);
-  runCached('getRecentData', [days], function(data){
+  runCachedThenRefresh('getRecentData', [days], function(data){
     var inRange0 = function(dstr){ return dstr >= period.from && dstr <= period.to; };
     /* ມື້ທີ່ກົດ "ລົງບັນຊີ" ແລ້ວ (ແລະຍອດຍັງກົງກັນ) ບໍ່ນັບໃນກາດສະຫຼຸບ — ສະແດງແຕ່ມື້ທີ່ຍັງບໍ່ໄດ້ລົງບັນຊີ */
     var closedDays = closedDaySet(data, STATE.currentBranch);
@@ -2668,7 +2697,7 @@ function renderSummary(){
   var year = Number(parts[0]), month = Number(parts[1]);
   $('sumDayLabel').textContent = '📅 ສະຫຼຸບວັນທີ ' + fmtDateLao(dayKey);
   $('sumMonthLabel').textContent = '📊 ປະຫວັດແຕ່ລະມື້ — ເດືອນ ' + (LAO_MONTH_NAMES[month - 1] || month) + ' ' + year + ' (ກົດເລືອກວັນທີອື່ນຢູ່ເທິງເພື່ອເບິ່ງສະຫຼຸບມື້ນັ້ນ)';
-  runCached('getMonthData', [year, month], function(data){
+  runCachedThenRefresh('getMonthData', [year, month], function(data){
     var sales = data.sales.filter(function(s){ return s.BranchID === STATE.currentBranch; });
     var expenses = data.expenses.filter(function(e){ return e.BranchID === STATE.currentBranch; });
     var incomes = (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch; });
@@ -2965,7 +2994,7 @@ function renderDashboard(){
   var prev = previousPeriodRange(period.from, period.to);
   var earliest = prev.from < period.from ? prev.from : period.from;
   var days = Math.max(2, daysBetweenStr(earliest, todayStr()) + 2);
-  runCached('getRecentData', [days], function(data){
+  runCachedThenRefresh('getRecentData', [days], function(data){
     var cur = ledgerTotals(data, period.from, period.to);
     var prevT = ledgerTotals(data, prev.from, prev.to);
     var maxVal = Math.max(cur.income, cur.expense, 1);
