@@ -408,9 +408,15 @@ body:not(.role-admin) .admin-only{display:none !important}
 
 <div class="card">
 <h2>📦 ລາຍການສິນຄ້າ &amp; ສະຕັອກ (<span id="stockBranchName"></span>) <span class="chip" id="prodCountChip" style="cursor:default">0</span></h2>
+<div class="row" id="prodBulkBar" style="display:none;margin-bottom:10px;background:#f3f6f4;border-radius:10px;padding:8px 12px">
+<span class="chip" id="prodBulkCount" style="cursor:default">ເລືອກ 0 ລາຍການ</span>
+<button type="button" class="btn sm" id="prodBulkOnBtn">🔓 ເປີດໃຊ້ທີ່ເລືອກ</button>
+<button type="button" class="btn warn sm" id="prodBulkOffBtn">🚫 ປິດທີ່ເລືອກ</button>
+<button type="button" class="btn ghost sm" id="prodBulkClearBtn">ຍົກເລີກການເລືອກ</button>
+</div>
 <div class="tbl-scroll">
 <table>
-<thead><tr><th>ຊື່ສິນຄ້າ</th><th>ໝວດ</th><th style="text-align:right">ລາຄາ</th><th style="text-align:right">ສະຕັອກ</th><th></th><th></th></tr></thead>
+<thead><tr><th style="width:34px"><input type="checkbox" id="prodSelectAll" style="width:16px;height:16px;margin:0"></th><th>ຊື່ສິນຄ້າ</th><th>ໝວດ</th><th style="text-align:right">ລາຄາ</th><th style="text-align:right">ສະຕັອກ</th><th></th><th></th></tr></thead>
 <tbody id="prodBody"></tbody>
 </table>
 </div>
@@ -2044,6 +2050,8 @@ $('saleEmployee').addEventListener('change', function(){
   saveSelectedEmployee(STATE.currentShop, this.value);
 });
 
+/* ອັບເດດຮອບ 18: ເກັບລາຍການສິນຄ້າທີ່ຜູ້ໃຊ້ຕິກເລືອກໄວ້ (ເພື່ອເປີດ/ປິດການຂາຍພ້ອມກັນຫຼາຍລາຍການ) */
+var SELECTED_PRODUCT_IDS_ = {};
 function renderProducts(){
   $('stockBranchName').textContent = branchName(STATE.currentBranch);
   var body = $('prodBody');
@@ -2053,30 +2061,41 @@ function renderProducts(){
     if (ca !== cb) return ca < cb ? -1 : 1;
     return String(a.Name).localeCompare(String(b.Name));
   });
+  /* ລຶບການເລືອກທີ່ບໍ່ມີໃນລາຍການປັດຈຸບັນອອກ (ເຊັ່ນ ປ່ຽນຮ້ານ/ສາຂາໄປແລ້ວ) */
+  var presentIds = {};
+  list.forEach(function(p){ presentIds[p.ID] = true; });
+  Object.keys(SELECTED_PRODUCT_IDS_).forEach(function(id){ if (!presentIds[id]) delete SELECTED_PRODUCT_IDS_[id]; });
   var lastCat = undefined;
   list.forEach(function(p){
     var cat = p.Category || '';
     if (cat !== lastCat) {
       lastCat = cat;
       var catTr = document.createElement('tr');
-      catTr.innerHTML = '<td colspan="6" style="background:#f8faf9;font-weight:700;color:var(--muted);font-size:12px">' + escapeHtml(cat || 'ບໍ່ມີໝວດ') + '</td>';
+      catTr.innerHTML = '<td colspan="7" style="background:#f8faf9;font-weight:700;color:var(--muted);font-size:12px">' + escapeHtml(cat || 'ບໍ່ມີໝວດ') + '</td>';
       body.appendChild(catTr);
     }
     var qty = stockQty(p.ID, STATE.currentBranch);
     var low = Number(p.MinStock) > 0 && qty <= Number(p.MinStock);
     var tr = document.createElement('tr');
     var rowThumb = p.Image ? '<img class="row-thumb" src="' + p.Image + '">' : '';
-    tr.innerHTML = '<td>' + rowThumb + escapeHtml(p.Name) + (p.Active === 'N' ? ' <span class="badge no">ປິດ</span>' : '') + '</td>' +
+    tr.innerHTML = '<td><input type="checkbox" class="prod-sel-cb" style="width:16px;height:16px;margin:0"></td>' +
+      '<td>' + rowThumb + escapeHtml(p.Name) + (p.Active === 'N' ? ' <span class="badge no">ປິດ</span>' : '') + '</td>' +
       '<td>' + escapeHtml(p.Category || '-') + '</td>' +
       '<td class="num">' + fmt(p.Price) + '</td>' +
       '<td class="num"><input type="text" value="' + qty + '" style="width:72px;text-align:right;padding:5px 6px" data-pid="' + p.ID + '"></td>' +
       '<td></td><td></td>';
-    var stockInput = tr.querySelector('input');
+    var selCb = tr.querySelector('.prod-sel-cb');
+    selCb.checked = !!SELECTED_PRODUCT_IDS_[p.ID];
+    selCb.addEventListener('change', function(){
+      if (selCb.checked) SELECTED_PRODUCT_IDS_[p.ID] = true; else delete SELECTED_PRODUCT_IDS_[p.ID];
+      updateProdBulkBar();
+    });
+    var stockInput = tr.querySelector('input[type="text"]');
     stockInput.addEventListener('change', function(){
       var v = parseAmount(this.value);
       run('setStock', [STATE.currentBranch, p.ID, v], function(){ toast('✅ ອັບເດດສະຕັອກແລ້ວ'); reloadAll(); });
     });
-    var tdEdit = tr.children[4], tdToggle = tr.children[5];
+    var tdEdit = tr.children[5], tdToggle = tr.children[6];
     var editBtn = document.createElement('button');
     editBtn.className = 'icon-btn'; editBtn.textContent = '✏️';
     editBtn.addEventListener('click', function(){ startEditProduct(p); });
@@ -2091,7 +2110,55 @@ function renderProducts(){
     body.appendChild(tr);
   });
   $('prodCountChip').textContent = list.length + ' ລາຍການ';
+  updateProdBulkBar();
 }
+
+/* ອັບເດດຮອບ 18: ສະແດງ/ເຊື່ອງແຖບປຸ່ມເປີດ-ປິດລາຍການທີ່ຕິກເລືອກໄວ້ ແລະ ອັບເດດສະຖານະ checkbox "ເລືອກທັງໝົດ" */
+function updateProdBulkBar(){
+  var ids = Object.keys(SELECTED_PRODUCT_IDS_);
+  var bar = $('prodBulkBar');
+  bar.style.display = ids.length ? 'flex' : 'none';
+  $('prodBulkCount').textContent = 'ເລືອກ ' + ids.length + ' ລາຍການ';
+  var allCb = $('prodSelectAll');
+  var total = shopProducts().length;
+  allCb.checked = total > 0 && ids.length === total;
+  allCb.indeterminate = ids.length > 0 && ids.length < total;
+}
+
+$('prodSelectAll').addEventListener('change', function(){
+  var checked = this.checked;
+  shopProducts().forEach(function(p){
+    if (checked) SELECTED_PRODUCT_IDS_[p.ID] = true; else delete SELECTED_PRODUCT_IDS_[p.ID];
+  });
+  renderProducts();
+});
+
+/* ອັບເດດຮອບ 18: ເປີດໃຊ້/ປິດການຂາຍຫຼາຍລາຍການພ້ອມກັນ ດ້ວຍການເອີ້ນ API ຄັ້ງດຽວ (setProductActiveBulk)
+   ແທນທີ່ຈະເອີ້ນເທື່ອລະລາຍການ ເຊິ່ງຈະຊ້າ ເພາະແຕ່ລະຄັ້ງທີ່ເອີ້ນ Apps Script ໃຊ້ເວລາ 1-4 ວິນາທີ */
+$('prodBulkOnBtn').addEventListener('click', function(){
+  var ids = Object.keys(SELECTED_PRODUCT_IDS_);
+  if (!ids.length) return;
+  run('setProductActiveBulk', [ids, true], function(){
+    toast('✅ ເປີດໃຊ້ແລ້ວ ' + ids.length + ' ລາຍການ');
+    SELECTED_PRODUCT_IDS_ = {};
+    reloadAll();
+  });
+});
+
+$('prodBulkOffBtn').addEventListener('click', function(){
+  var ids = Object.keys(SELECTED_PRODUCT_IDS_);
+  if (!ids.length) return;
+  run('setProductActiveBulk', [ids, false], function(){
+    toast('✅ ປິດແລ້ວ ' + ids.length + ' ລາຍການ');
+    SELECTED_PRODUCT_IDS_ = {};
+    reloadAll();
+  });
+});
+
+$('prodBulkClearBtn').addEventListener('click', function(){
+  SELECTED_PRODUCT_IDS_ = {};
+  renderProducts();
+});
 
 function startEditProduct(p){
   STATE.editingProductId = p.ID;
