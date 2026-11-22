@@ -506,6 +506,33 @@ body:not(.role-admin) .admin-only{display:none !important}
 </form>
 </div>
 
+<div class="card owner-only">
+<h2>🏦 ຝາກທະນາຄານ</h2>
+<div class="hint" style="margin:0 0 10px">ເອົາເງິນສົດອອກຈາກຮ້ານ ເຂົ້າບັນຊີທະນາຄານ — ສະເພາະ admin/ຫົວໜ້າຮ້ານ</div>
+<form id="bankDepForm">
+<div class="grid2">
+<label class="fld">ວັນທີ
+<input type="date" id="bdDate" required>
+</label>
+<label class="fld">ຈຳນວນເງິນ (ກີບ)
+<input type="text" id="bdAmount" inputmode="decimal" placeholder="0" required>
+</label>
+<label class="fld full">ໝາຍເຫດ
+<input type="text" id="bdNote" placeholder="ບໍ່ຈຳເປັນ">
+</label>
+</div>
+<div class="row" style="margin-top:12px">
+<button type="submit" class="btn">🏦 ຝາກທະນາຄານ</button>
+<span class="hint" style="margin:0">ສາຂາ: <b id="bdBranchLabel"></b></span>
+</div>
+</form>
+<div class="scard net" style="margin-top:14px;max-width:260px"><div class="label">🏦 ຍອດທະນາຄານສະສົມ</div><div class="val" id="bdTotalVal">0</div></div>
+<div class="tbl-scroll" style="margin-top:14px">
+<table><thead><tr><th>ວັນທີ</th><th style="text-align:right">ຈຳນວນ</th><th>ໝາຍເຫດ</th><th>ໂດຍ</th><th></th></tr></thead><tbody id="bdBody"></tbody></table>
+</div>
+<div class="empty" id="bdEmpty">ຍັງບໍ່ມີລາຍການຝາກທະນາຄານ</div>
+</div>
+
 <div class="card">
 <h2>📒 ລາຍຮັບ-ລາຍຈ່າຍລ່າສຸດ (60 ວັນ)</h2>
 <div class="cards" id="expCards"></div>
@@ -838,7 +865,7 @@ body:not(.role-admin) .admin-only{display:none !important}
 (function(){
 "use strict";
 
-var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null }, dashPeriod: { type: 'today', from: null, to: null }, heldBills: [], resumingHeldBillId: null, paidTodayCount: 0, closeFormOpenDate: null };
+var STATE = { shops: [], branches: [], products: [], productCategories: [], stock: [], employees: [], expenseCategories: [], incomeCategories: [], bankDeposits: [], currentShop: null, currentBranch: null, cart: [], catFilter: '', editingProductId: null, sumPeriod: { type: 'today', from: null, to: null }, dashPeriod: { type: 'today', from: null, to: null }, heldBills: [], resumingHeldBillId: null, paidTodayCount: 0, closeFormOpenDate: null };
 
 function shopBranches(){ return STATE.branches.filter(function(b){ return b.ShopID === STATE.currentShop; }); }
 function shopProducts(){ return STATE.products.filter(function(p){ return p.ShopID === STATE.currentShop; }); }
@@ -991,7 +1018,7 @@ document.querySelectorAll('#tabs button').forEach(function(btn){
     $('view-' + btn.getAttribute('data-tab')).classList.add('on');
     if (btn.getAttribute('data-tab') === 'summary') renderSummary();
     if (btn.getAttribute('data-tab') === 'products') { showProductsSubView('menu'); renderProducts(); }
-    if (btn.getAttribute('data-tab') === 'expenses') { $('expBranchLabel').textContent = branchName(STATE.currentBranch); $('incBranchLabel').textContent = branchName(STATE.currentBranch); renderExpenses(); }
+    if (btn.getAttribute('data-tab') === 'expenses') { $('expBranchLabel').textContent = branchName(STATE.currentBranch); $('incBranchLabel').textContent = branchName(STATE.currentBranch); $('bdBranchLabel').textContent = branchName(STATE.currentBranch); renderExpenses(); renderBankDeposits(); }
     if (btn.getAttribute('data-tab') === 'dashboard') renderDashboard();
   });
 });
@@ -1096,6 +1123,7 @@ function onBoot(data){
   STATE.employees = data.employees || [];
   STATE.expenseCategories = data.expenseCategories || [];
   STATE.incomeCategories = data.incomeCategories || [];
+  STATE.bankDeposits = data.bankDeposits || [];
 
   renderShopSelect();
   renderBranchSelect();
@@ -1121,10 +1149,12 @@ function onBoot(data){
   refreshHeldBills();
   $('eDate').value = todayStr();
   $('iDate').value = todayStr();
+  $('bdDate').value = todayStr();
   $('pStockDate').value = todayStr();
   if (!$('sumDate').value) $('sumDate').value = todayStr();
   $('expBranchLabel').textContent = branchName(STATE.currentBranch);
   $('incBranchLabel').textContent = branchName(STATE.currentBranch);
+  $('bdBranchLabel').textContent = branchName(STATE.currentBranch);
 }
 
 function todayStr(){
@@ -2313,6 +2343,63 @@ function renderExpenses(){
     $('expEmpty').style.display = rows.length ? 'none' : 'block';
   });
 }
+
+/* ---------- ຝາກທະນາຄານ (ເອົາເງິນສົດເຂົ້າບັນຊີທະນາຄານ) ---------- */
+function shopBankDeposits(){
+  var ids = {};
+  shopBranches().forEach(function(b){ ids[b.ID] = true; });
+  return (STATE.bankDeposits || []).filter(function(d){ return ids[d.BranchID]; });
+}
+
+function renderBankDeposits(){
+  var rows = shopBankDeposits().slice().sort(function(a, b){
+    if (a.Date !== b.Date) return a.Date < b.Date ? 1 : -1;
+    return String(b.CreatedAt || '').localeCompare(String(a.CreatedAt || ''));
+  });
+  var total = 0;
+  rows.forEach(function(d){ total += Number(d.Amount) || 0; });
+  $('bdTotalVal').textContent = fmt(total);
+  var body = $('bdBody');
+  body.innerHTML = '';
+  rows.forEach(function(d){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + d.Date + '</td><td class="num">' + fmt(Number(d.Amount) || 0) + '</td><td>' + escapeHtml(d.Note || '') + '</td><td>' + escapeHtml(d.By || '') + '</td><td></td>';
+    var td = tr.lastElementChild;
+    var delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn owner-only'; delBtn.textContent = '🗑️';
+    delBtn.addEventListener('click', function(){
+      if (!window.confirm('ລຶບລາຍການຝາກທະນາຄານນີ້?')) return;
+      run('deleteBankDeposit', [d.ID], function(){
+        STATE.bankDeposits = STATE.bankDeposits.filter(function(x){ return x.ID !== d.ID; });
+        toast('✅ ລຶບແລ້ວ');
+        renderBankDeposits();
+      });
+    });
+    td.appendChild(delBtn);
+    body.appendChild(tr);
+  });
+  $('bdEmpty').style.display = rows.length ? 'none' : 'block';
+}
+
+$('bankDepForm').addEventListener('submit', function(ev){
+  ev.preventDefault();
+  if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
+  var amount = parseAmount($('bdAmount').value);
+  if (!amount) { toast('❌ ກະລຸນາປ້ອນຈຳນວນເງິນ'); return; }
+  var e = {
+    branchId: STATE.currentBranch,
+    date: $('bdDate').value,
+    amount: amount,
+    note: $('bdNote').value.trim(),
+    by: (SESSION && SESSION.user && SESSION.user.name) || ''
+  };
+  run('addBankDeposit', [e], function(res){
+    STATE.bankDeposits.push({ ID: res.id, Date: e.date, BranchID: e.branchId, Amount: e.amount, Note: e.note, By: e.by, CreatedAt: new Date().toISOString() });
+    toast('✅ ບັນທຶກຝາກທະນາຄານແລ້ວ');
+    $('bdAmount').value = ''; $('bdNote').value = ''; $('bdDate').value = todayStr();
+    renderBankDeposits();
+  });
+});
 
 /* ---------- summary tab ---------- */
 var LAO_MONTH_NAMES = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
