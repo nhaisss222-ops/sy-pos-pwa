@@ -1,4 +1,4 @@
-var CACHE_NAME = 'sy-pos-shell-v9';
+var CACHE_NAME = 'sy-pos-shell-v10';
 var SHELL_FILES = [
   './manifest.json',
   './icon-192.png',
@@ -9,8 +9,18 @@ var NETWORK_FIRST = ['./', './index.html'];
 
 self.addEventListener('install', function(event){
   self.skipWaiting();
+  // ອັບເດດຮອບ 16: ຕອນ SW ຕິດຕັ້ງ (ຫຼັງ deploy ໃໝ່ແຕ່ລະຄັ້ງ) ດຶງ index.html ມາແຄັດໄວ້ລ່ວງໜ້າທັນທີເລີຍ
+  // (ບໍ່ລໍຖ້າໃຫ້ມີການເປີດແອັບຄັ້ງຕໍ່ໄປກ່ອນ) — ຖ້າຄົນເປີດແອັບອີກຄັ້ງໃນໄວໆນີ້ (ເຊັ່ນ: ປິດແລ້ວເປີດຄືນ
+  // ເພື່ອທົດສອບ) ຈະໄດ້ແຄັດໃໝ່ທັນທີ ບໍ່ຕ້ອງລໍເຄືອຂ່າຍຊ້ຳອີກ. ແຍກອອກຈາກ SHELL_FILES ເພື່ອບໍ່ໃຫ້ລົ້ມເຫຼວ
+  // ນຳກັນ (ຖ້າ icon/manifest ດຶງບໍ່ໄດ້ ກໍ່ບໍ່ກະທົບການແຄັດ index.html)
   event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache){ return cache.addAll(SHELL_FILES); })
+    caches.open(CACHE_NAME).then(function(cache){
+      var shellPromise = cache.addAll(SHELL_FILES).catch(function(){});
+      var indexPromise = fetch('./index.html', { cache: 'no-store' }).then(function(resp){
+        if (resp && resp.status === 200) return cache.put('./index.html', resp.clone());
+      }).catch(function(){});
+      return Promise.all([shellPromise, indexPromise]);
+    })
   );
 });
 
