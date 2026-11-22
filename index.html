@@ -773,7 +773,12 @@ body:not(.role-admin) .admin-only{display:none !important}
 <!-- ===== PAID BILLS MODAL ===== -->
 <div class="modal" id="paidBillsModal">
 <div class="box">
-<h3>✅ ບິນຈ່າຍແລ້ວ (ມື້ນີ້)</h3>
+<h3>✅ ບິນຈ່າຍແລ້ວ</h3>
+<div class="row" style="align-items:center;gap:6px;margin-bottom:10px">
+<button type="button" class="btn ghost" id="paidBillsDatePrev" style="flex:0 0 auto;padding:8px 14px">◀</button>
+<input type="date" id="paidBillsDate" style="flex:1">
+<button type="button" class="btn ghost" id="paidBillsDateNext" style="flex:0 0 auto;padding:8px 14px">▶</button>
+</div>
 <div id="paidBillsList"></div>
 <div class="empty" id="paidBillsEmpty" style="display:none">ຍັງບໍ່ມີບິນຈ່າຍແລ້ວ</div>
 <div class="row" style="margin-top:12px">
@@ -1778,22 +1783,47 @@ function bumpPaidTodayCount(delta){
   $('paidBillsChip').textContent = '✅ ບິນຈ່າຍແລ້ວ ' + STATE.paidTodayCount;
 }
 
+/* ອັບເດດຮອບ 15: "ບິນຈ່າຍແລ້ວ" ດຽວນີ້ເບິ່ງບິນຍ້ອນຫຼັງໄດ້ (ບໍ່ສະເພາະມື້ນີ້) — ມີ ◀ ▶ ແລະ ຊ່ອງເລືອກວັນທີ.
+   ມື້ອື່ນທີ່ບໍ່ແມ່ນມື້ນີ້: ເບິ່ງໄດ້ຢ່າງດຽວ (ບໍ່ສະແດງປຸ່ມ 🗑️ ຍົກເລີກບິນ) ເພາະການຍົກເລີກບິນເກົ່າອາດເຮັດໃຫ້ຍອດ
+   ທີ່ປິດບັນຊີໄປແລ້ວຂອງມື້ນັ້ນບໍ່ຕົງກັນແບບງຽບໆ (voidSale ບໍ່ໄດ້ກວດວ່າມື້ນັ້ນປິດບັນຊີແລ້ວຫຼືບໍ່) */
 function openPaidBillsModal(){
-  runCached('getRecentData', [2], function(data){
-    var today = todayStr();
-    var rows = data.sales.filter(function(s){ return s.Date === today && s.BranchID === STATE.currentBranch; });
-    rows.sort(function(a, b){ return a.Time < b.Time ? 1 : -1; });
-    var itemsBySale = {};
-    data.items.forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
-    renderPaidBillsModal(rows, itemsBySale);
-    $('paidBillsChip').textContent = '✅ ບິນຈ່າຍແລ້ວ ' + rows.length;
-    $('paidBillsModal').classList.add('show');
-  });
+  $('paidBillsDate').value = todayStr();
+  renderPaidBillsForSelectedDate();
+  $('paidBillsModal').classList.add('show');
 }
 $('paidBillsChip').addEventListener('click', openPaidBillsModal);
 $('closePaidBillsBtn').addEventListener('click', function(){ $('paidBillsModal').classList.remove('show'); });
 
-function renderPaidBillsModal(rows, itemsBySale){
+function renderPaidBillsForSelectedDate(){
+  var dateStr = $('paidBillsDate').value || todayStr();
+  var daysBack = Math.max(2, daysBetweenStr(dateStr, todayStr()) + 2);
+  runCached('getRecentData', [daysBack], function(data){
+    var rows = data.sales.filter(function(s){ return s.Date === dateStr && s.BranchID === STATE.currentBranch; });
+    rows.sort(function(a, b){ return a.Time < b.Time ? 1 : -1; });
+    var itemsBySale = {};
+    data.items.forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
+    renderPaidBillsModal(rows, itemsBySale, dateStr === todayStr());
+    if (dateStr === todayStr()) {
+      STATE.paidTodayCount = rows.length;
+      $('paidBillsChip').textContent = '✅ ບິນຈ່າຍແລ້ວ ' + rows.length;
+    }
+  });
+}
+$('paidBillsDate').addEventListener('change', function(){
+  if ($('paidBillsDate').value > todayStr()) $('paidBillsDate').value = todayStr();
+  renderPaidBillsForSelectedDate();
+});
+$('paidBillsDatePrev').addEventListener('click', function(){
+  $('paidBillsDate').value = shiftDateStr($('paidBillsDate').value, -1);
+  renderPaidBillsForSelectedDate();
+});
+$('paidBillsDateNext').addEventListener('click', function(){
+  var next = shiftDateStr($('paidBillsDate').value, 1);
+  $('paidBillsDate').value = (next > todayStr()) ? todayStr() : next;
+  renderPaidBillsForSelectedDate();
+});
+
+function renderPaidBillsModal(rows, itemsBySale, allowVoid){
   var box = $('paidBillsList');
   box.innerHTML = '';
   rows.forEach(function(s){
@@ -1804,13 +1834,15 @@ function renderPaidBillsModal(rows, itemsBySale){
     line.innerHTML = '<div class="nm">' + s.Time + ' · ' + escapeHtml(itNames || 'ການຂາຍ') + '<div class="meta">' + payIconFor(s) + (s.PaymentType === 'split' ? ' ແຍກຈ່າຍ (💵' + fmt(s.CashAmount) + ' · 🏦' + fmt(s.TransferAmount) + ')' : (s.PaymentType === 'cash' ? ' ເງິນສົດ' : ' ເງິນໂອນ')) + '</div></div>' +
       '<div class="tot">' + fmt(s.Total) + '</div>';
     line.addEventListener('click', function(){ showSaleDetail(s, items); });
-    var delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn owner-only'; delBtn.textContent = '🗑️';
-    delBtn.addEventListener('click', function(ev){
-      ev.stopPropagation();
-      confirmVoid(s.ID, s.BranchID, items, function(){ $('paidBillsModal').classList.remove('show'); });
-    });
-    line.appendChild(delBtn);
+    if (allowVoid) {
+      var delBtn = document.createElement('button');
+      delBtn.className = 'icon-btn owner-only'; delBtn.textContent = '🗑️';
+      delBtn.addEventListener('click', function(ev){
+        ev.stopPropagation();
+        confirmVoid(s.ID, s.BranchID, items, function(){ $('paidBillsModal').classList.remove('show'); });
+      });
+      line.appendChild(delBtn);
+    }
     box.appendChild(line);
   });
   $('paidBillsEmpty').style.display = rows.length ? 'none' : 'block';
