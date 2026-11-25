@@ -1969,10 +1969,11 @@ $('holdBillBtn').addEventListener('click', function(){
       refreshHeldBills();
     };
     if (!oldHeldId) { finish(); return; }
-    run('deleteHeldBill', [oldHeldId], finish, function(){
-      toast('⚠️ ບັນທຶກແລ້ວ ແຕ່ລຶບບິນເກົ່າບໍ່ໄດ້ — ກະລຸນາລຶບບິນເກົ່າເອງໃນ "ບິນລໍຖ້າ"');
+    /* ລຶບບິນເກົ່າອັດຕະໂນມັດ — ຖ້າເນັດຂັດຂ້ອງ ເກັບເຂົ້າຄິວ ແລ້ວລຶບໃຫ້ເອງເມື່ອເນັດກັບມາ (ບໍ່ຕ້ອງລຶບເອງ) */
+    run('deleteHeldBill', [oldHeldId], finish, function(msg, isNetworkErr){
+      if (isNetworkErr) queueOfflineCall('deleteHeldBill', [oldHeldId]);
       finish();
-    });
+    }, { silent: true });
   });
 });
 

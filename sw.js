@@ -1,4 +1,4 @@
-var CACHE_NAME = 'sy-pos-shell-v14';
+var CACHE_NAME = 'sy-pos-shell-v15';
 var SHELL_FILES = [
   './manifest.json',
   './icon-192.png',
