@@ -1155,6 +1155,7 @@ $('shopSel').addEventListener('change', function(){
   $('shopTitle').textContent = STATE.currentShop ? ('🛍️ ຂາຍເຄື່ອງ ' + shopName(STATE.currentShop)) : '🛍️ ຂາຍເຄື່ອງ';
   STATE.currentBranch = null;
   STATE.cart = [];
+  STATE.resumingHeldBillId = null;
   $('cartDiscount').value = '';
   renderBranchSelect();
   renderCart();
@@ -1196,6 +1197,7 @@ function renderBranchSelect(){
 $('branchSel').addEventListener('change', function(){
   STATE.currentBranch = this.value;
   STATE.cart = [];
+  STATE.resumingHeldBillId = null;
   $('cartDiscount').value = '';
   renderCart();
   renderPOS();
@@ -1829,6 +1831,7 @@ function updateCartTotals(){
 function renderCart(){
   var box = $('cartLines');
   box.innerHTML = '';
+  if (!STATE.cart.length) STATE.resumingHeldBillId = null; /* ກະຕ່າຫວ່າງ = ເລີ່ມບິນໃໝ່ ບໍ່ຜູກກັບບິນລໍຖ້າເກົ່າອີກ */
   $('cartEmptyMsg').style.display = STATE.cart.length ? 'none' : 'block';
   STATE.cart.forEach(function(l, idx){
     var item = document.createElement('div');
@@ -1949,16 +1952,27 @@ $('holdBillBtn').addEventListener('click', function(){
   if (!STATE.cart.length) { toast('❌ ກະຕ່າວ່າງເປົ່າ'); return; }
   var items = STATE.cart.map(function(l){ return { productId: l.productId, name: l.name, qty: l.qty, price: l.price, unit: l.unit || '', discVal: Number(l.discVal) || 0, discType: l.discType || 'kip' }; });
   var payload = { branchId: STATE.currentBranch, customerName: $('holdCustomerName').value || '', items: items, note: $('saleNote').value || '' };
+  /* ຮອບ 20: ຖ້າບິນນີ້ດຶງມາຈາກ "ບິນລໍຖ້າ" ເກົ່າ (ແກ້ໄຂເພີ່ມ/ລົບສິນຄ້າ) ໃຫ້ບັນທຶກທັບບິນເກົ່າ ບໍ່ສ້າງບິນໃໝ່ຊ້ຳ:
+     ບັນທຶກເວີຊັນໃໝ່ກ່ອນ (ປອດໄພ — ຖ້າບັນທຶກບໍ່ສຳເລັດ ບິນເກົ່າຍັງຢູ່) ແລ້ວຄ່ອຍລຶບບິນເກົ່າອອກ */
+  var oldHeldId = STATE.resumingHeldBillId;
   run('holdBill', [payload], function(res){
-    toast('✅ ບັນທຶກບິນລໍຖ້າແລ້ວ ' + fmt(res.total) + ' ກີບ');
-    STATE.cart = [];
-    STATE.resumingHeldBillId = null;
-    $('holdCustomerName').value = '';
-    $('saleNote').value = '';
-    $('cartDiscount').value = '';
-    $('cartModal').classList.remove('show');
-    renderCart();
-    refreshHeldBills();
+    var finish = function(){
+      toast('✅ ' + (oldHeldId ? 'ອັບເດດບິນລໍຖ້າແລ້ວ ' : 'ບັນທຶກບິນລໍຖ້າແລ້ວ ') + fmt(res.total) + ' ກີບ');
+      STATE.cart = [];
+      STATE.resumingHeldBillId = null;
+      $('holdCustomerName').value = '';
+      $('saleNote').value = '';
+      $('cartDiscount').value = '';
+      $('cartModal').classList.remove('show');
+      renderCart();
+      invalidateDataCache();
+      refreshHeldBills();
+    };
+    if (!oldHeldId) { finish(); return; }
+    run('deleteHeldBill', [oldHeldId], finish, function(){
+      toast('⚠️ ບັນທຶກແລ້ວ ແຕ່ລຶບບິນເກົ່າບໍ່ໄດ້ — ກະລຸນາລຶບບິນເກົ່າເອງໃນ "ບິນລໍຖ້າ"');
+      finish();
+    });
   });
 });
 
