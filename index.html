@@ -115,6 +115,46 @@ display:flex;align-items:center;gap:10px;flex-wrap:wrap;
 .modal .box.lg{max-width:720px}
 @media (min-width:600px){.modal{align-items:center}.modal .box{border-radius:var(--radius);max-height:90vh}}
 .modal h3{margin:0 0 10px;font-size:16px}
+
+/* ອັບເດດຮອບ 19: ປຸ່ມເມນູຈຸດ (⋮ dropdown) ແທນການວາງ icon-btn ຫຼາຍໆອັນຕິດກັນ */
+.dd{position:relative;flex:none}
+.dd-toggle{border:none;background:none;cursor:pointer;font-size:19px;padding:6px 9px;border-radius:8px;color:var(--muted);line-height:1}
+.dd-toggle:hover{background:#eef2f0;color:var(--ink)}
+.dd-menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.16);min-width:180px;z-index:60;padding:6px;display:none}
+.dd-menu.show{display:block}
+.dd-item{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;text-align:left;padding:10px 11px;border-radius:9px;font-size:14px;cursor:pointer;color:var(--ink)}
+.dd-item:hover{background:#f3f6f4}
+.dd-item.danger{color:#c0392b}
+
+/* ອັບເດດຮອບ 19: ລາຍການສິນຄ້າແບບກ່ອງ (card list) ແທນຕາຕະລາງ */
+.plist{display:flex;flex-direction:column;gap:8px}
+.plist .pcat-head{font-weight:700;color:var(--muted);font-size:12px;padding:10px 2px 2px;text-transform:uppercase;letter-spacing:.02em}
+.pitem{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:14px;padding:10px;background:#fff}
+.pitem .pi-cb{width:18px;height:18px;flex:none;margin:0}
+.pitem .pi-thumb{width:48px;height:48px;border-radius:10px;object-fit:cover;background:#eef2f0;flex:none;display:block}
+.pitem .pi-thumb.noimg{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--muted)}
+.pitem .pi-info{flex:1;min-width:0}
+.pitem .pi-name{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pitem .pi-meta{font-size:12.5px;color:var(--muted);margin-top:2px}
+.pitem .pi-price{color:var(--accent);font-weight:700;font-size:14px;margin-top:2px}
+.pitem .pi-stock{width:66px;flex:none}
+.pitem .pi-stock input{width:100%;text-align:right;padding:6px 7px;font-size:13px}
+
+/* ອັບເດດຮອບ 19: Carousel ສິນຄ້າຂາຍດີ ຢູ່ເທິງສຸດໜ້າ "ຂາຍເຄື່ອງ" */
+.bscar{position:relative;margin-bottom:12px}
+.bscar-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;scrollbar-width:none;-ms-overflow-style:none}
+.bscar-track::-webkit-scrollbar{display:none}
+.bscar-slide{scroll-snap-align:start;flex:none;width:76%;max-width:220px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;border:none;padding:0;text-align:left;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.bscar-slide .bs-badge{position:absolute;top:8px;left:8px;background:linear-gradient(135deg,#ff9f43,#ee5253);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;z-index:2}
+.bscar-slide .bs-thumb{width:100%;aspect-ratio:16/10;object-fit:cover;background:#eef2f0;display:block}
+.bscar-slide .bs-thumb.noimg{display:flex;align-items:center;justify-content:center;font-size:30px;background:linear-gradient(135deg,#eef5f1,#e4ede8)}
+.bscar-slide .bs-info{padding:9px 11px 11px}
+.bscar-slide .bs-name{font-weight:700;font-size:13.5px;color:var(--ink);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.bscar-slide .bs-price{color:var(--accent);font-weight:800;font-size:14px;margin-top:2px}
+.bscar-dots{display:flex;justify-content:center;gap:5px;margin-top:8px}
+.bscar-dots span{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.bscar-dots span.on{background:var(--accent);width:16px;border-radius:4px}
+.bscar-title{font-size:12.5px;color:var(--muted);font-weight:600;margin:0 0 8px;display:flex;align-items:center;gap:5px}
 .period-opt{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px}
 .period-opt:last-of-type{border-bottom:none}
 .period-opt input[type=radio]{width:19px;height:19px;accent-color:var(--accent);margin:0}
@@ -324,6 +364,11 @@ body:not(.role-admin) .admin-only{display:none !important}
 <section class="view on" id="view-pos">
 <div class="card">
 <h2>🛒 ເລືອກສິນຄ້າ <span style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip" id="heldBillsChip">🧾 ບິນລໍຖ້າ 0</span><span class="chip" id="paidBillsChip">✅ ບິນຈ່າຍແລ້ວ 0</span></span></h2>
+<div class="bscar" id="bestSellerCarousel" style="display:none">
+<div class="bscar-title">🔥 ສິນຄ້າຂາຍດີ (14 ມື້ຫຼ້າສຸດ)</div>
+<div class="bscar-track" id="bscarTrack"></div>
+<div class="bscar-dots" id="bscarDots"></div>
+</div>
 <div class="pos-top">
 <input type="text" id="posSearch" placeholder="🔍 ຄົ້ນຫາສິນຄ້າ...">
 </div>
@@ -414,12 +459,11 @@ body:not(.role-admin) .admin-only{display:none !important}
 <button type="button" class="btn warn sm" id="prodBulkOffBtn">🚫 ປິດທີ່ເລືອກ</button>
 <button type="button" class="btn ghost sm" id="prodBulkClearBtn">ຍົກເລີກການເລືອກ</button>
 </div>
-<div class="tbl-scroll">
-<table>
-<thead><tr><th style="width:34px"><input type="checkbox" id="prodSelectAll" style="width:16px;height:16px;margin:0"></th><th>ຊື່ສິນຄ້າ</th><th>ໝວດ</th><th style="text-align:right">ລາຄາ</th><th style="text-align:right">ສະຕັອກ</th><th></th><th></th></tr></thead>
-<tbody id="prodBody"></tbody>
-</table>
-</div>
+<label class="fld" style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0 0 8px">
+<input type="checkbox" id="prodSelectAll" style="width:16px;height:16px;margin:0">
+<span style="font-size:13px;color:var(--muted)">ເລືອກທັງໝົດ</span>
+</label>
+<div id="prodBody" class="plist"></div>
 </div>
 
 
@@ -729,6 +773,19 @@ body:not(.role-admin) .admin-only{display:none !important}
 <button class="btn ghost" id="closeCartBtn">ປິດ</button>
 <button class="btn ghost" id="holdBillBtn" style="flex:1">📝 ບັນທຶກລໍຖ້າ</button>
 <button class="btn" id="checkoutBtn" style="flex:1">✅ ຢືນຢັນການຂາຍ</button>
+</div>
+</div>
+</div>
+
+<!-- ອັບເດດຮອບ 19: Modal ທົ່ວໄປ ແທນ window.confirm/window.prompt (popup ເກົ່າຂອງ browser ທີ່ບໍ່ສວຍ) -->
+<div class="modal" id="genModal">
+<div class="box" style="max-width:420px">
+<h3 id="genModalTitle">ຢືນຢັນ</h3>
+<div id="genModalMsg" style="font-size:14.5px;color:var(--ink);line-height:1.5;white-space:pre-line"></div>
+<div id="genModalFields"></div>
+<div class="row" style="margin-top:16px">
+<button type="button" class="btn ghost" id="genModalCancel" style="flex:1">ຍົກເລີກ</button>
+<button type="button" class="btn" id="genModalOk" style="flex:1">ຕົກລົງ</button>
 </div>
 </div>
 </div>
@@ -1481,6 +1538,77 @@ function renderPOS(){
     grid.appendChild(card);
   });
   $('posEmpty').style.display = shown ? 'none' : 'block';
+  renderBestSellerCarousel();
+}
+
+/* ---------- ຮອບ 19: Carousel ສິນຄ້າຂາຍດີ (ອັດຕະໂນມັດຈາກຂໍ້ມູນຂາຍ 14 ມື້ຫຼ້າສຸດ) ---------- */
+var BSCAR_INTERVAL_ = null;
+function stopBscarAuto(){
+  if (BSCAR_INTERVAL_) { clearInterval(BSCAR_INTERVAL_); BSCAR_INTERVAL_ = null; }
+}
+function startBscarAuto(track, count){
+  stopBscarAuto();
+  if (count < 2) return;
+  BSCAR_INTERVAL_ = setInterval(function(){
+    if (!track || !track.isConnected) { stopBscarAuto(); return; }
+    var w = track.clientWidth;
+    var atEnd = track.scrollLeft + w >= track.scrollWidth - 4;
+    track.scrollTo({ left: atEnd ? 0 : track.scrollLeft + w, behavior: 'smooth' });
+  }, 3500);
+}
+function renderBestSellerSlides(list){
+  var wrap = $('bestSellerCarousel');
+  var track = $('bscarTrack');
+  var dots = $('bscarDots');
+  stopBscarAuto();
+  if (!list.length) { wrap.style.display = 'none'; track.innerHTML = ''; dots.innerHTML = ''; return; }
+  wrap.style.display = 'block';
+  track.innerHTML = '';
+  dots.innerHTML = '';
+  list.forEach(function(p, i){
+    var hasImg = !!p.Image;
+    var slide = document.createElement('button');
+    slide.type = 'button';
+    slide.className = 'bscar-slide' + (hasImg ? '' : ' noimg');
+    var thumb = hasImg ? '<img class="bs-thumb" src="' + p.Image + '">' : '<div class="bs-thumb noimg"></div>';
+    slide.innerHTML = '<div class="bs-badge">🔥 ' + (i + 1) + '</div>' + thumb +
+      '<div class="bs-info"><div class="bs-name">' + escapeHtml(p.Name) + '</div>' +
+      '<div class="bs-price">' + fmt(p.Price) + ' ກີບ</div></div>';
+    slide.addEventListener('click', function(){ addToCart(p); });
+    track.appendChild(slide);
+    var dot = document.createElement('span');
+    dot.className = 'bscar-dot' + (i === 0 ? ' on' : '');
+    dots.appendChild(dot);
+  });
+  var dotEls = dots.children;
+  track.onscroll = function(){
+    var w = track.clientWidth || 1;
+    var idx = Math.round(track.scrollLeft / w);
+    for (var i = 0; i < dotEls.length; i++) dotEls[i].className = 'bscar-dot' + (i === idx ? ' on' : '');
+  };
+  startBscarAuto(track, list.length);
+}
+function renderBestSellerCarousel(){
+  runCachedThenRefresh('getRecentData', [14], function(data){
+    var shopIds = {};
+    shopProducts().forEach(function(p){ shopIds[p.ID] = p; });
+    var itemsBySale = {};
+    (data.items || []).forEach(function(it){ (itemsBySale[it.SaleID] = itemsBySale[it.SaleID] || []).push(it); });
+    var qtyByProduct = {};
+    (data.sales || []).forEach(function(s){
+      if (s.BranchID !== STATE.currentBranch) return;
+      (itemsBySale[s.ID] || []).forEach(function(it){
+        if (!shopIds[it.ProductID]) return;
+        qtyByProduct[it.ProductID] = (qtyByProduct[it.ProductID] || 0) + (Number(it.Qty) || 0);
+      });
+    });
+    var ranked = Object.keys(qtyByProduct).map(function(pid){
+      return { p: shopIds[pid], qty: qtyByProduct[pid] };
+    }).filter(function(r){ return r.p && r.p.Active !== 'N'; });
+    ranked.sort(function(a, b){ return b.qty - a.qty; });
+    var top = ranked.slice(0, 5).map(function(r){ return r.p; });
+    renderBestSellerSlides(top);
+  });
 }
 
 function readAndCompressImage(file, maxDim, quality, cb){
@@ -1534,6 +1662,107 @@ $('pImageRemoveBtn').addEventListener('click', function(){
 function escapeHtml(s){
   s = String(s === undefined || s === null ? '' : s);
   return s.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('"').join('&quot;');
+}
+
+/* ---------- ຮອບ 19: Modal ທົ່ວໄປ ແທນ window.confirm/window.prompt ---------- */
+/* confirmModal/promptModal/fieldsModal ສົ່ງຄືນ Promise (ບໍ່ບລັອກໜ້າຈໍແບບ popup ເກົ່າຂອງ browser,
+   ໜ້າຕາກົງກັບແອັບ). ໃຊ້ແທນທີ່ window.confirm/window.prompt ທຸກບ່ອນ. */
+var GEN_MODAL_RESOLVE_ = null;
+function closeGenModal(result){
+  $('genModal').classList.remove('show');
+  var resolve = GEN_MODAL_RESOLVE_;
+  GEN_MODAL_RESOLVE_ = null;
+  if (resolve) resolve(result);
+}
+$('genModalCancel').addEventListener('click', function(){ closeGenModal(null); });
+$('genModal').addEventListener('click', function(ev){ if (ev.target === this) closeGenModal(null); });
+
+function confirmModal(message, opts){
+  opts = opts || {};
+  return new Promise(function(resolve){
+    GEN_MODAL_RESOLVE_ = function(v){ resolve(!!v); };
+    $('genModalTitle').textContent = opts.title || 'ຢືນຢັນ';
+    $('genModalMsg').style.display = '';
+    $('genModalMsg').textContent = message;
+    $('genModalFields').innerHTML = '';
+    $('genModalOk').textContent = opts.okLabel || 'ຕົກລົງ';
+    $('genModalOk').className = 'btn' + (opts.danger ? ' warn' : '');
+    $('genModalOk').onclick = function(){ closeGenModal(true); };
+    $('genModal').classList.add('show');
+  });
+}
+
+function promptModal(message, opts){
+  opts = opts || {};
+  return new Promise(function(resolve){
+    GEN_MODAL_RESOLVE_ = function(v){ resolve(v); };
+    $('genModalTitle').textContent = opts.title || 'ປ້ອນຂໍ້ມູນ';
+    $('genModalMsg').style.display = '';
+    $('genModalMsg').textContent = message;
+    $('genModalFields').innerHTML = '<label class="fld full" style="margin-top:8px"><input type="' + (opts.type || 'text') + '" id="genModalInput" value="' + escapeHtml(opts.value || '') + '" placeholder="' + escapeHtml(opts.placeholder || '') + '"></label>';
+    $('genModalOk').textContent = opts.okLabel || 'ຕົກລົງ';
+    $('genModalOk').className = 'btn';
+    $('genModalOk').onclick = function(){
+      var v = $('genModalInput').value;
+      closeGenModal(v && v.trim() ? v : (opts.allowEmpty ? v : null));
+    };
+    $('genModal').classList.add('show');
+    setTimeout(function(){ var el = $('genModalInput'); if (el) { el.focus(); el.select(); } }, 60);
+  });
+}
+
+/* fieldsModal: ຫຼາຍຊ່ອງພ້ອມກັນໃນ modal ດຽວ (ເຊັ່ນ ປ່ຽນລະຫັດຜ່ານ 3 ຊ່ອງ ແທນການຖາມເທື່ອລະຂັ້ນຕອນ) */
+function fieldsModal(title, fieldsDef, opts){
+  opts = opts || {};
+  return new Promise(function(resolve){
+    GEN_MODAL_RESOLVE_ = function(v){ resolve(v); };
+    $('genModalTitle').textContent = title;
+    $('genModalMsg').style.display = opts.message ? '' : 'none';
+    $('genModalMsg').textContent = opts.message || '';
+    $('genModalFields').innerHTML = fieldsDef.map(function(f, i){
+      return '<label class="fld full" style="margin-top:' + (i ? 10 : 8) + 'px">' + escapeHtml(f.label) +
+        '<input type="' + (f.type || 'text') + '" id="genField_' + i + '" placeholder="' + escapeHtml(f.placeholder || '') + '"></label>';
+    }).join('');
+    $('genModalOk').textContent = opts.okLabel || 'ຕົກລົງ';
+    $('genModalOk').className = 'btn';
+    $('genModalOk').onclick = function(){
+      var out = {};
+      fieldsDef.forEach(function(f, i){ out[f.key] = $('genField_' + i).value; });
+      closeGenModal(out);
+    };
+    $('genModal').classList.add('show');
+    setTimeout(function(){ var el = $('genField_0'); if (el) el.focus(); }, 60);
+  });
+}
+
+/* ---------- ຮອບ 19: ປຸ່ມເມນູຈຸດ (⋮ dropdown) ແທນການວາງ icon-btn ຫຼາຍໆອັນຕິດກັນ ---------- */
+var OPEN_DD_ = null;
+document.addEventListener('click', function(ev){
+  if (OPEN_DD_ && !OPEN_DD_.contains(ev.target)) closeAllDropdowns();
+});
+function closeAllDropdowns(){
+  document.querySelectorAll('.dd-menu.show').forEach(function(m){ m.classList.remove('show'); });
+  OPEN_DD_ = null;
+}
+function makeDropdown(actions){
+  var wrap = document.createElement('div'); wrap.className = 'dd';
+  var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'dd-toggle'; btn.textContent = '⋮';
+  var menu = document.createElement('div'); menu.className = 'dd-menu';
+  actions.forEach(function(a){
+    var item = document.createElement('button');
+    item.type = 'button'; item.className = 'dd-item' + (a.danger ? ' danger' : '');
+    item.innerHTML = '<span>' + (a.icon || '') + '</span><span>' + escapeHtml(a.label) + '</span>';
+    item.addEventListener('click', function(ev){ ev.stopPropagation(); closeAllDropdowns(); a.onClick(); });
+    menu.appendChild(item);
+  });
+  btn.addEventListener('click', function(ev){
+    ev.stopPropagation();
+    var isOpen = menu.classList.contains('show');
+    closeAllDropdowns();
+    if (!isOpen) { menu.classList.add('show'); OPEN_DD_ = wrap; }
+  });
+  wrap.appendChild(btn); wrap.appendChild(menu);
+  return wrap;
 }
 
 /* ---------- cart ---------- */
@@ -1700,7 +1929,10 @@ function renderHeldBillsModal(){
 }
 
 function resumeHeldBill(h){
-  if (STATE.cart.length && !window.confirm('ກະຕ່າປັດຈຸບັນຍັງມີລາຍການຢູ່ — ດຶງບິນນີ້ມາຈະທັບກະຕ່າເກົ່າ. ແທ້ບໍ?')) return;
+  if (STATE.cart.length) { confirmModal('ກະຕ່າປັດຈຸບັນຍັງມີລາຍການຢູ່ — ດຶງບິນນີ້ມາຈະທັບກະຕ່າເກົ່າ. ແທ້ບໍ?').then(function(ok){ if (ok) doResumeHeldBill(h); }); return; }
+  doResumeHeldBill(h);
+}
+function doResumeHeldBill(h){
   STATE.cart = (h.Items || []).map(function(it){
     return { productId: it.productId, name: it.name, price: Number(it.price) || 0, qty: Number(it.qty) || 0, unit: it.unit || '', discVal: Number(it.discVal) || 0, discType: it.discType || 'kip' };
   });
@@ -1914,7 +2146,8 @@ function renderPaidBillsModal(rows, itemsBySale, allowVoid){
 }
 
 function confirmVoid(saleId, branchId, items, after){
-  if (!window.confirm('ຍົກເລີກລາຍການຂາຍນີ້ (ສະຕັອກຈະຄືນ)?')) return;
+  confirmModal('ຍົກເລີກລາຍການຂາຍນີ້ (ສະຕັອກຈະຄືນ)?', { danger: true, okLabel: 'ຍົກເລີກບິນ' }).then(function(ok){
+  if (!ok) return;
   run('voidSale', [saleId], function(){
     invalidateDataCache();
     toast('✅ ຍົກເລີກແລ້ວ');
@@ -1922,6 +2155,7 @@ function confirmVoid(saleId, branchId, items, after){
     renderPOS();
     bumpPaidTodayCount(-1);
     if (after) after();
+  });
   });
 }
 
@@ -1977,8 +2211,9 @@ function renderCategoryManage(){
     var btn = document.createElement('button');
     btn.className = 'icon-btn'; btn.textContent = '✏️';
     btn.addEventListener('click', function(){
-      var nn = window.prompt('ຊື່ໝວດໃໝ່:', c.Name);
-      if (nn && nn.trim()) run('renameCategory', [c.ID, nn.trim()], function(){ toast('✅ ອັບເດດແລ້ວ'); reloadAll(); });
+      promptModal('ຊື່ໝວດໃໝ່:', { value: c.Name, title: 'ແກ້ໄຂໝວດ' }).then(function(nn){
+        if (nn && nn.trim()) run('renameCategory', [c.ID, nn.trim()], function(){ toast('✅ ອັບເດດແລ້ວ'); reloadAll(); });
+      });
     });
     td.appendChild(btn);
     body.appendChild(tr);
@@ -2026,8 +2261,9 @@ function renderEmployeeManage(){
     var btn = document.createElement('button');
     btn.className = 'icon-btn'; btn.textContent = '✏️';
     btn.addEventListener('click', function(){
-      var nn = window.prompt('ຊື່ພະນັກງານໃໝ່:', e.Name);
-      if (nn && nn.trim()) run('renameEmployee', [e.ID, nn.trim()], function(){ toast('✅ ອັບເດດແລ້ວ'); reloadAll(); });
+      promptModal('ຊື່ພະນັກງານໃໝ່:', { value: e.Name, title: 'ແກ້ໄຂພະນັກງານ' }).then(function(nn){
+        if (nn && nn.trim()) run('renameEmployee', [e.ID, nn.trim()], function(){ toast('✅ ອັບເດດແລ້ວ'); reloadAll(); });
+      });
     });
     td.appendChild(btn);
     body.appendChild(tr);
@@ -2065,49 +2301,51 @@ function renderProducts(){
   var presentIds = {};
   list.forEach(function(p){ presentIds[p.ID] = true; });
   Object.keys(SELECTED_PRODUCT_IDS_).forEach(function(id){ if (!presentIds[id]) delete SELECTED_PRODUCT_IDS_[id]; });
+  /* ອັບເດດຮອບ 19: ລາຍການສິນຄ້າ ປ່ຽນຈາກຕາຕະລາງ ມາເປັນລາຍການແບບກ່ອງ (card) — ງ່າຍກວ່າໃຊ້ງານໃນມືຖື
+     ແລະ ປຸ່ມ action (ແກ້ໄຂ/ເປີດ-ປິດ) ລວມເປັນເມນູ ⋮ ດຽວ ແທນການວາງ icon ຫຼາຍໆອັນ */
   var lastCat = undefined;
   list.forEach(function(p){
     var cat = p.Category || '';
     if (cat !== lastCat) {
       lastCat = cat;
-      var catTr = document.createElement('tr');
-      catTr.innerHTML = '<td colspan="7" style="background:#f8faf9;font-weight:700;color:var(--muted);font-size:12px">' + escapeHtml(cat || 'ບໍ່ມີໝວດ') + '</td>';
-      body.appendChild(catTr);
+      var catHead = document.createElement('div');
+      catHead.className = 'pcat-head';
+      catHead.textContent = cat || 'ບໍ່ມີໝວດ';
+      body.appendChild(catHead);
     }
     var qty = stockQty(p.ID, STATE.currentBranch);
-    var low = Number(p.MinStock) > 0 && qty <= Number(p.MinStock);
-    var tr = document.createElement('tr');
-    var rowThumb = p.Image ? '<img class="row-thumb" src="' + p.Image + '">' : '';
-    tr.innerHTML = '<td><input type="checkbox" class="prod-sel-cb" style="width:16px;height:16px;margin:0"></td>' +
-      '<td>' + rowThumb + escapeHtml(p.Name) + (p.Active === 'N' ? ' <span class="badge no">ປິດ</span>' : '') + '</td>' +
-      '<td>' + escapeHtml(p.Category || '-') + '</td>' +
-      '<td class="num">' + fmt(p.Price) + '</td>' +
-      '<td class="num"><input type="text" value="' + qty + '" style="width:72px;text-align:right;padding:5px 6px" data-pid="' + p.ID + '"></td>' +
-      '<td></td><td></td>';
-    var selCb = tr.querySelector('.prod-sel-cb');
+    var tracked = hasStockRow(p.ID, STATE.currentBranch);
+    var low = tracked && Number(p.MinStock) > 0 && qty <= Number(p.MinStock);
+    var item = document.createElement('div');
+    item.className = 'pitem';
+    var thumb = p.Image ? '<img class="pi-thumb" src="' + p.Image + '">' : '<div class="pi-thumb noimg">📦</div>';
+    item.innerHTML = '<input type="checkbox" class="pi-cb">' + thumb +
+      '<div class="pi-info">' +
+      '<div class="pi-name">' + escapeHtml(p.Name) + (p.Active === 'N' ? ' <span class="badge no">ປິດ</span>' : '') + (low ? ' <span class="badge no">ສະຕັອກຕໍ່າ</span>' : '') + '</div>' +
+      '<div class="pi-meta">' + escapeHtml(p.Category || 'ບໍ່ມີໝວດ') + '</div>' +
+      '<div class="pi-price">' + fmt(p.Price) + ' ກີບ</div>' +
+      '</div>' +
+      '<div class="pi-stock"><input type="text" value="' + qty + '" inputmode="decimal"></div>';
+    var selCb = item.querySelector('.pi-cb');
     selCb.checked = !!SELECTED_PRODUCT_IDS_[p.ID];
     selCb.addEventListener('change', function(){
       if (selCb.checked) SELECTED_PRODUCT_IDS_[p.ID] = true; else delete SELECTED_PRODUCT_IDS_[p.ID];
       updateProdBulkBar();
     });
-    var stockInput = tr.querySelector('input[type="text"]');
+    var stockInput = item.querySelector('.pi-stock input');
     stockInput.addEventListener('change', function(){
       var v = parseAmount(this.value);
       run('setStock', [STATE.currentBranch, p.ID, v], function(){ toast('✅ ອັບເດດສະຕັອກແລ້ວ'); reloadAll(); });
     });
-    var tdEdit = tr.children[5], tdToggle = tr.children[6];
-    var editBtn = document.createElement('button');
-    editBtn.className = 'icon-btn'; editBtn.textContent = '✏️';
-    editBtn.addEventListener('click', function(){ startEditProduct(p); });
-    tdEdit.appendChild(editBtn);
-    var toggleBtn = document.createElement('button');
-    toggleBtn.className = 'icon-btn'; toggleBtn.textContent = p.Active === 'N' ? '🔓' : '🚫';
-    toggleBtn.title = p.Active === 'N' ? 'ເປີດໃຊ້ຄືນ' : 'ປິດ (ເຊົາຂາຍ)';
-    toggleBtn.addEventListener('click', function(){
-      run('setProductActive', [p.ID, p.Active === 'N'], function(){ toast('✅ ອັບເດດແລ້ວ'); reloadAll(); });
-    });
-    tdToggle.appendChild(toggleBtn);
-    body.appendChild(tr);
+    var dd = makeDropdown([
+      { icon: '✏️', label: 'ແກ້ໄຂສິນຄ້າ', onClick: function(){ startEditProduct(p); } },
+      {
+        icon: p.Active === 'N' ? '🔓' : '🚫', label: p.Active === 'N' ? 'ເປີດໃຊ້ຄືນ' : 'ປິດ (ເຊົາຂາຍ)', danger: p.Active !== 'N',
+        onClick: function(){ run('setProductActive', [p.ID, p.Active === 'N'], function(){ toast('✅ ອັບເດດແລ້ວ'); reloadAll(); }); }
+      }
+    ]);
+    item.appendChild(dd);
+    body.appendChild(item);
   });
   $('prodCountChip').textContent = list.length + ' ລາຍການ';
   updateProdBulkBar();
@@ -2250,8 +2488,9 @@ function renderShops(){
     var btn = document.createElement('button');
     btn.className = 'icon-btn'; btn.textContent = '✏️';
     btn.addEventListener('click', function(){
-      var nn = window.prompt('ຊື່ຮ້ານໃໝ່:', s.Name);
-      if (nn && nn.trim()) run('renameShop', [s.ID, nn.trim()], function(){ toast('✅ ອັບເດດແລ້ວ'); reloadAll(); });
+      promptModal('ຊື່ຮ້ານໃໝ່:', { value: s.Name, title: 'ແກ້ໄຂຮ້ານ' }).then(function(nn){
+        if (nn && nn.trim()) run('renameShop', [s.ID, nn.trim()], function(){ toast('✅ ອັບເດດແລ້ວ'); reloadAll(); });
+      });
     });
     td.appendChild(btn);
     body.appendChild(tr);
@@ -2282,8 +2521,9 @@ function renderBranches(){
     var btn = document.createElement('button');
     btn.className = 'icon-btn'; btn.textContent = '✏️';
     btn.addEventListener('click', function(){
-      var nn = window.prompt('ຊື່ສາຂາໃໝ່:', b.Name);
-      if (nn && nn.trim()) run('renameBranch', [b.ID, nn.trim()], function(){ toast('✅ ອັບເດດແລ້ວ'); reloadAll(); });
+      promptModal('ຊື່ສາຂາໃໝ່:', { value: b.Name, title: 'ແກ້ໄຂສາຂາ' }).then(function(nn){
+        if (nn && nn.trim()) run('renameBranch', [b.ID, nn.trim()], function(){ toast('✅ ອັບເດດແລ້ວ'); reloadAll(); });
+      });
     });
     td.appendChild(btn);
     body.appendChild(tr);
@@ -2420,8 +2660,10 @@ function renderExpenses(){
         incBtn.className = 'icon-btn owner-only'; incBtn.textContent = '🗑️';
         incBtn.addEventListener('click', function(ev){
           ev.stopPropagation();
-          if (!window.confirm('ລຶບລາຍຮັບນີ້?')) return;
-          run('deleteIncome', [r.income.ID], function(){ invalidateDataCache(); toast('✅ ລຶບແລ້ວ'); renderExpenses(); });
+          confirmModal('ລຶບລາຍຮັບນີ້?', { danger: true, okLabel: 'ລຶບ' }).then(function(ok){
+            if (!ok) return;
+            run('deleteIncome', [r.income.ID], function(){ invalidateDataCache(); toast('✅ ລຶບແລ້ວ'); renderExpenses(); });
+          });
         });
         td.appendChild(incBtn);
       } else {
@@ -2429,8 +2671,10 @@ function renderExpenses(){
         expBtn.className = 'icon-btn owner-only'; expBtn.textContent = '🗑️';
         expBtn.addEventListener('click', function(ev){
           ev.stopPropagation();
-          if (!window.confirm('ລຶບລາຍຈ່າຍນີ້?')) return;
-          run('deleteExpense', [r.expense.ID], function(){ invalidateDataCache(); toast('✅ ລຶບແລ້ວ'); renderExpenses(); });
+          confirmModal('ລຶບລາຍຈ່າຍນີ້?', { danger: true, okLabel: 'ລຶບ' }).then(function(ok){
+            if (!ok) return;
+            run('deleteExpense', [r.expense.ID], function(){ invalidateDataCache(); toast('✅ ລຶບແລ້ວ'); renderExpenses(); });
+          });
         });
         td.appendChild(expBtn);
       }
@@ -2464,11 +2708,13 @@ function renderBankDeposits(){
     var delBtn = document.createElement('button');
     delBtn.className = 'icon-btn owner-only'; delBtn.textContent = '🗑️';
     delBtn.addEventListener('click', function(){
-      if (!window.confirm('ລຶບລາຍການຝາກທະນາຄານນີ້?')) return;
+      confirmModal('ລຶບລາຍການຝາກທະນາຄານນີ້?', { danger: true, okLabel: 'ລຶບ' }).then(function(ok){
+      if (!ok) return;
       run('deleteBankDeposit', [d.ID], function(){
         STATE.bankDeposits = STATE.bankDeposits.filter(function(x){ return x.ID !== d.ID; });
         toast('✅ ລຶບແລ້ວ');
         renderBankDeposits();
+      });
       });
     });
     td.appendChild(delBtn);
@@ -2747,8 +2993,10 @@ function renderCloseExpList(dayExpenses){
     var delBtn = document.createElement('button');
     delBtn.className = 'icon-btn'; delBtn.textContent = '🗑️';
     delBtn.addEventListener('click', function(){
-      if (!window.confirm('ລຶບລາຍຈ່າຍນີ້?')) return;
-      run('deleteExpense', [e.ID], function(){ invalidateDataCache(); toast('✅ ລຶບແລ້ວ'); renderSummary(); renderExpenses(); });
+      confirmModal('ລຶບລາຍຈ່າຍນີ້?', { danger: true, okLabel: 'ລຶບ' }).then(function(ok){
+        if (!ok) return;
+        run('deleteExpense', [e.ID], function(){ invalidateDataCache(); toast('✅ ລຶບແລ້ວ'); renderSummary(); renderExpenses(); });
+      });
     });
     line.appendChild(delBtn);
     box.appendChild(line);
@@ -3293,11 +3541,13 @@ $('loginForm').addEventListener('submit', function(ev){
 });
 
 $('logoutBtn').addEventListener('click', function(){
-  if (!window.confirm('ອອກຈາກລະບົບ?')) return;
+  confirmModal('ອອກຈາກລະບົບ?').then(function(ok){
+  if (!ok) return;
   var token = SESSION ? SESSION.token : '';
   fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: 'logout', args: [], token: token }) }).catch(function(){});
   endSession();
   location.reload();
+  });
 });
 
 $('settingsBtn').addEventListener('click', function(){
@@ -3311,12 +3561,16 @@ $('closeSettingsX').addEventListener('click', closeSettings);
 $('settingsModal').addEventListener('click', function(ev){ if (ev.target === this) closeSettings(); });
 
 $('changePwBtn').addEventListener('click', function(){
-  var oldPw = window.prompt('ລະຫັດຜ່ານປັດຈຸບັນ:');
-  if (!oldPw) return;
-  var newPw = window.prompt('ລະຫັດຜ່ານໃໝ່ (ຢ່າງໜ້ອຍ 6 ຕົວ):');
-  if (!newPw) return;
-  if (window.prompt('ພິມລະຫັດຜ່ານໃໝ່ອີກຄັ້ງ:') !== newPw) { toast('❌ ລະຫັດຜ່ານໃໝ່ບໍ່ກົງກັນ'); return; }
-  run('changeMyPassword', [oldPw, newPw], function(){ toast('✅ ປ່ຽນລະຫັດຜ່ານແລ້ວ'); });
+  fieldsModal('🔑 ປ່ຽນລະຫັດຜ່ານ', [
+    { key: 'oldPw', label: 'ລະຫັດຜ່ານປັດຈຸບັນ', type: 'password' },
+    { key: 'newPw', label: 'ລະຫັດຜ່ານໃໝ່ (ຢ່າງໜ້ອຍ 6 ຕົວ)', type: 'password' },
+    { key: 'newPw2', label: 'ພິມລະຫັດຜ່ານໃໝ່ອີກຄັ້ງ', type: 'password' }
+  ], { okLabel: 'ປ່ຽນລະຫັດຜ່ານ' }).then(function(v){
+    if (!v) return;
+    if (!v.oldPw || !v.newPw) { toast('❌ ກະລຸນາປ້ອນໃຫ້ຄົບ'); return; }
+    if (v.newPw !== v.newPw2) { toast('❌ ລະຫັດຜ່ານໃໝ່ບໍ່ກົງກັນ'); return; }
+    run('changeMyPassword', [v.oldPw, v.newPw], function(){ toast('✅ ປ່ຽນລະຫັດຜ່ານແລ້ວ'); });
+  });
 });
 
 /* ---------- ຈັດການບັນຊີຜູ້ໃຊ້ (ເຈົ້າຂອງຮ້ານ/ຜູ້ດູແລ) ---------- */
@@ -3342,19 +3596,30 @@ function renderUsers(){
       tr.innerHTML = '<td>' + escapeHtml(u.name) + '</td><td>' + escapeHtml(u.username) + '</td><td><span class="' + tagCls + '">' + (u.active ? (ROLE_LABEL[u.role] || u.role) : 'ປິດແລ້ວ') + '</span></td><td style="white-space:nowrap"></td>';
       var td = tr.lastElementChild;
       if (SESSION && u.id !== SESSION.user.id) {
-        var pw = document.createElement('button');
-        pw.className = 'icon-btn'; pw.textContent = '🔑'; pw.title = 'ຕັ້ງລະຫັດຜ່ານໃໝ່';
-        pw.addEventListener('click', function(){
-          var np = window.prompt('ລະຫັດຜ່ານໃໝ່ສຳລັບ ' + u.name + ' (ຢ່າງໜ້ອຍ 6 ຕົວ):');
-          if (np) run('resetUserPassword', [u.id, np], function(){ toast('✅ ຕັ້ງລະຫັດຜ່ານໃໝ່ແລ້ວ'); });
-        });
-        var act = document.createElement('button');
-        act.className = 'icon-btn'; act.textContent = u.active ? '⛔' : '✅'; act.title = u.active ? 'ປິດບັນຊີ' : 'ເປີດບັນຊີຄືນ';
-        act.addEventListener('click', function(){
-          if (u.active && !window.confirm('ປິດບັນຊີ ' + u.name + '? ຄົນນີ້ຈະຖືກອອກຈາກລະບົບທັນທີ.')) return;
-          run('setUserActive', [u.id, !u.active], function(){ toast('✅ ອັບເດດແລ້ວ'); renderUsers(); });
-        });
-        td.appendChild(pw); td.appendChild(act);
+        /* ອັບເດດຮອບ 19: ປຸ່ມ action 2 ອັນ (ຕັ້ງລະຫັດຜ່ານ / ປິດ-ເປີດບັນຊີ) ລວມເປັນເມນູ ⋮ ດຽວ */
+        var dd = makeDropdown([
+          {
+            icon: '🔑', label: 'ຕັ້ງລະຫັດຜ່ານໃໝ່',
+            onClick: function(){
+              promptModal('ລະຫັດຜ່ານໃໝ່ສຳລັບ ' + u.name + ' (ຢ່າງໜ້ອຍ 6 ຕົວ):', { type: 'password', title: 'ຕັ້ງລະຫັດຜ່ານໃໝ່' }).then(function(np){
+                if (np) run('resetUserPassword', [u.id, np], function(){ toast('✅ ຕັ້ງລະຫັດຜ່ານໃໝ່ແລ້ວ'); });
+              });
+            }
+          },
+          {
+            icon: u.active ? '⛔' : '✅', label: u.active ? 'ປິດບັນຊີ' : 'ເປີດບັນຊີຄືນ', danger: u.active,
+            onClick: function(){
+              if (u.active) {
+                confirmModal('ປິດບັນຊີ ' + u.name + '? ຄົນນີ້ຈະຖືກອອກຈາກລະບົບທັນທີ.', { danger: true, okLabel: 'ປິດບັນຊີ' }).then(function(ok){
+                  if (ok) run('setUserActive', [u.id, false], function(){ toast('✅ ອັບເດດແລ້ວ'); renderUsers(); });
+                });
+              } else {
+                run('setUserActive', [u.id, true], function(){ toast('✅ ອັບເດດແລ້ວ'); renderUsers(); });
+              }
+            }
+          }
+        ]);
+        td.appendChild(dd);
       }
       body.appendChild(tr);
     });
