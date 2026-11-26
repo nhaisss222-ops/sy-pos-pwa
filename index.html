@@ -1101,6 +1101,40 @@ function runCachedThenRefresh(fnName, args, renderFn){
   }, null, { silent: !!cached });
 }
 
+/* ຮອບ 22: ລຶບບິນແລ້ວໃຫ້ຫາຍທັນທີ (optimistic) — ແກ້ຂໍ້ມູນທີ່ແຄັດໄວ້ (ໜ່ວຍຄວາມຈຳ + localStorage) ໃຫ້ບິນນັ້ນຫາຍໄປເລີຍ
+   ເພື່ອບໍ່ໃຫ້ກັບມາກະພິບຕອນເປີດຄືນ ຫຼືຕອນຂໍ້ມູນເກົ່າສະແດງກ່ອນ server ຕອບ */
+function purgeFromCaches_(fnName, mutate){
+  Object.keys(DATA_CACHE_).forEach(function(k){
+    if (k.indexOf(fnName + ':') === 0 && DATA_CACHE_[k]) { try { mutate(DATA_CACHE_[k].data); } catch (e) {} }
+  });
+  try {
+    var pre = 'syposLedgerCacheV1:' + (SESSION ? SESSION.user.id : '') + ':' + fnName + ':';
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf(pre) === 0) {
+        var d = JSON.parse(localStorage.getItem(k));
+        mutate(d);
+        localStorage.setItem(k, JSON.stringify(d));
+      }
+    }
+  } catch (e) {}
+}
+function purgeSaleFromCaches_(saleId){
+  var m = function(d){
+    if (!d) return;
+    if (d.sales) d.sales = d.sales.filter(function(s){ return s.ID !== saleId; });
+    if (d.items) d.items = d.items.filter(function(it){ return it.SaleID !== saleId; });
+  };
+  purgeFromCaches_('getRecentData', m);
+  purgeFromCaches_('getMonthData', m);
+}
+function purgeHeldFromCaches_(heldId){
+  purgeFromCaches_('getHeldBills', function(d){
+    if (!Array.isArray(d)) return;
+    for (var i = d.length - 1; i >= 0; i--) if (d[i].ID === heldId) d.splice(i, 1);
+  });
+}
+
 /* ---------- tabs ---------- */
 document.querySelectorAll('#tabs button').forEach(function(btn){
   btn.addEventListener('click', function(){
@@ -1925,7 +1959,19 @@ function renderHeldBillsModal(){
       '<button type="button" class="icon-btn" data-a="del">🗑️</button>';
     row.querySelector('[data-a="resume"]').addEventListener('click', function(){ resumeHeldBill(h); });
     row.querySelector('[data-a="del"]').addEventListener('click', function(){
-      run('deleteHeldBill', [h.ID], function(){ toast('✅ ລົບບິນລໍຖ້າແລ້ວ'); refreshHeldBills(function(){ renderHeldBillsModal(); }); });
+      /* ຮອບ 22: ລຶບແລ້ວຫາຍທັນທີ ບໍ່ລໍ server — ສົ່ງຄຳສັ່ງລຶບເບື້ອງຫຼັງ; ຖ້າເນັດຂັດຂ້ອງເກັບຄິວລຶບໃຫ້ເອງພາຍຫຼັງ */
+      row.remove();
+      STATE.heldBills = STATE.heldBills.filter(function(x){ return x.ID !== h.ID; });
+      purgeHeldFromCaches_(h.ID);
+      renderHeldChip();
+      $('heldBillsEmpty').style.display = box.children.length ? 'none' : 'block';
+      toast('✅ ລຶບບິນລໍຖ້າແລ້ວ');
+      run('deleteHeldBill', [h.ID], function(){ invalidateDataCache(); }, function(msg, isNetworkErr){
+        if (isNetworkErr) { queueOfflineCall('deleteHeldBill', [h.ID]); return; }
+        toast('❌ ລຶບບິນລໍຖ້າບໍ່ສຳເລັດ: ' + msg);
+        invalidateDataCache();
+        refreshHeldBills(function(){ renderHeldBillsModal(); });
+      }, { silent: true });
     });
     box.appendChild(row);
   });
@@ -2151,7 +2197,10 @@ function renderPaidBillsModal(rows, itemsBySale, allowVoid){
       delBtn.className = 'icon-btn owner-only'; delBtn.textContent = '🗑️';
       delBtn.addEventListener('click', function(ev){
         ev.stopPropagation();
-        confirmVoid(s.ID, s.BranchID, items, function(){ $('paidBillsModal').classList.remove('show'); });
+        confirmVoid(s.ID, s.BranchID, items, function(){
+          line.remove();
+          $('paidBillsEmpty').style.display = box.children.length ? 'none' : 'block';
+        });
       });
       line.appendChild(delBtn);
     }
@@ -2163,14 +2212,24 @@ function renderPaidBillsModal(rows, itemsBySale, allowVoid){
 function confirmVoid(saleId, branchId, items, after){
   confirmModal('ຍົກເລີກລາຍການຂາຍນີ້ (ສະຕັອກຈະຄືນ)?', { danger: true, okLabel: 'ຍົກເລີກບິນ' }).then(function(ok){
   if (!ok) return;
+  /* ຮອບ 22: ຍົກເລີກບິນແລ້ວໃຫ້ແຖວຫາຍທັນທີ (ສະຕັອກ/ຕົວນັບປັບທັນທີ) ແລ້ວຄ່ອຍສົ່ງຄຳສັ່ງໄປ server ເບື້ອງຫຼັງ —
+     ຖ້າ server ປະຕິເສດ/ເນັດຂາດ ຈຶ່ງຍ້ອນຄືນທຸກຢ່າງແລະໂຫຼດບິນຈິງຄືນມາສະແດງ */
+  items.forEach(function(it){ adjustLocalStock(branchId, it.ProductID, Number(it.Qty) || 0); });
+  renderPOS();
+  bumpPaidTodayCount(-1);
+  purgeSaleFromCaches_(saleId);
+  toast('✅ ຍົກເລີກແລ້ວ');
+  if (after) after();
   run('voidSale', [saleId], function(){
     invalidateDataCache();
-    toast('✅ ຍົກເລີກແລ້ວ');
-    items.forEach(function(it){ adjustLocalStock(branchId, it.ProductID, Number(it.Qty) || 0); });
+  }, function(msg, isNetworkErr){
+    items.forEach(function(it){ adjustLocalStock(branchId, it.ProductID, -(Number(it.Qty) || 0)); });
     renderPOS();
-    bumpPaidTodayCount(-1);
-    if (after) after();
-  });
+    bumpPaidTodayCount(1);
+    invalidateDataCache();
+    toast(isNetworkErr ? '❌ ເນັດຂັດຂ້ອງ ຍົກເລີກບິນບໍ່ສຳເລັດ — ກຳລັງໂຫຼດບິນຄືນ' : ('❌ ຍົກເລີກບິນບໍ່ສຳເລັດ: ' + msg));
+    if ($('paidBillsModal').classList.contains('show')) renderPaidBillsForSelectedDate();
+  }, { silent: true });
   });
 }
 
