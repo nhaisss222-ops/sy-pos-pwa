@@ -545,6 +545,13 @@ body:not(.role-admin) .admin-only{display:none !important}
 <option value="transfer">🏦 ເງິນໂອນ</option>
 </select>
 </label>
+<label class="fld full">ເປັນລາຍຈ່າຍຂອງ
+<select id="eOwner">
+<option value="">🤝 ລາຍຈ່າຍລວມ (ຫານ 2)</option>
+<option value="Yai">👤 Yai (ລົບຈາກລາຍຮັບ Yai)</option>
+<option value="Sing">👤 Sing (ລົບຈາກລາຍຮັບ Sing)</option>
+</select>
+</label>
 <label class="fld full">ໝາຍເຫດ
 <input type="text" id="eNote" placeholder="ບໍ່ຈຳເປັນ">
 </label>
@@ -639,6 +646,13 @@ body:not(.role-admin) .admin-only{display:none !important}
 <select id="closeExpPayType">
 <option value="cash">💵 ເງິນສົດ</option>
 <option value="transfer">🏦 ເງິນໂອນ</option>
+</select>
+</label>
+<label class="fld full">ເປັນລາຍຈ່າຍຂອງ
+<select id="closeExpOwner">
+<option value="">🤝 ລາຍຈ່າຍລວມ (ຫານ 2)</option>
+<option value="Yai">👤 Yai (ລົບຈາກລາຍຮັບ Yai)</option>
+<option value="Sing">👤 Sing (ລົບຈາກລາຍຮັບ Sing)</option>
 </select>
 </label>
 <label class="fld full">ລາຍການ / ໝາຍເຫດ
@@ -1489,6 +1503,16 @@ $('sumDateNext').addEventListener('click', function(){
   renderSummary();
 });
 
+/* ຮອບ 23: ລາຍຈ່າຍສ່ວນຕົວ Yai/Sing — ເກັບໃນ Category ເປັນ "Yai · ໝວດ" / "Sing · ໝວດ" (ບໍ່ຕ້ອງແກ້ backend ເພາະ
+   addExpense ບໍ່ກວດໝວດ). ລາຍຈ່າຍລວມ (ບໍ່ມີຊື່ຄົນ) ຍັງຫານ 2 ຄືເກົ່າ; ລາຍຈ່າຍສ່ວນຕົວຖືກລົບຈາກລາຍຮັບຂອງຄົນນັ້ນຢ່າງດຽວ */
+function ownerCategory_(cat, owner){ return owner ? (owner + ' · ' + cat) : cat; }
+function expenseOwner_(e){
+  var c = String((e && e.Category) || '').trim().toLowerCase();
+  if (c === 'yai' || c.indexOf('yai ·') === 0) return 'yai';
+  if (c === 'sing' || c.indexOf('sing ·') === 0) return 'sing';
+  return '';
+}
+
 $('closeExpSaveBtn').addEventListener('click', function(){
   if (!STATE.currentBranch) { toast('❌ ກະລຸນາເລືອກສາຂາ'); return; }
   var amt = parseAmount($('closeExpAmount').value);
@@ -1497,7 +1521,7 @@ $('closeExpSaveBtn').addEventListener('click', function(){
   var e = {
     branchId: STATE.currentBranch,
     date: dateStr,
-    category: $('closeExpCategory').value,
+    category: ownerCategory_($('closeExpCategory').value, $('closeExpOwner').value),
     item: $('closeExpNote').value.trim(),
     amount: amt,
     paymentType: $('closeExpPayType').value,
@@ -1536,7 +1560,7 @@ $('closeDayBtn').addEventListener('click', function(){
       run('addExpense', [{
         branchId: STATE.currentBranch,
         date: dateStr,
-        category: $('closeExpCategory').value,
+        category: ownerCategory_($('closeExpCategory').value, $('closeExpOwner').value),
         item: $('closeExpNote').value.trim(),
         amount: expAmount,
         paymentType: $('closeExpPayType').value,
@@ -2661,7 +2685,7 @@ $('expForm').addEventListener('submit', function(ev){
   var e = {
     branchId: STATE.currentBranch,
     date: $('eDate').value,
-    category: $('eCategory').value,
+    category: ownerCategory_($('eCategory').value, $('eOwner').value),
     item: $('eItem').value.trim(),
     amount: parseAmount($('eAmount').value),
     paymentType: $('ePayType').value,
@@ -3289,12 +3313,19 @@ function ledgerTotals(data, from, to){
   var incomes = (data.incomes || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
   var expenses = (data.expenses || []).filter(function(e){ return e.BranchID === STATE.currentBranch && inRange(e.Date); });
   var closings = (data.closings || []).filter(function(c){ return c.BranchID === STATE.currentBranch && inRange(c.Date); });
-  var income = 0, expense = 0;
+  var income = 0, expense = 0, personalYai = 0, personalSing = 0;
+  var sharedExpenses = [];
   sales.forEach(function(s){ income += Number(s.Total) || 0; });
   incomes.forEach(function(e){ income += Number(e.Amount) || 0; });
-  expenses.forEach(function(e){ expense += Number(e.Amount) || 0; });
+  /* ຮອບ 23: ແຍກລາຍຈ່າຍສ່ວນຕົວ Yai/Sing ອອກຈາກລາຍຈ່າຍລວມ (expense/expenses = ສະເພາະລາຍຈ່າຍລວມທີ່ຫານ 2) */
+  expenses.forEach(function(e){
+    var amt = Number(e.Amount) || 0, o = expenseOwner_(e);
+    if (o === 'yai') personalYai += amt;
+    else if (o === 'sing') personalSing += amt;
+    else { expense += amt; sharedExpenses.push(e); }
+  });
   var count = sales.length + incomes.length + expenses.length;
-  return { income: income, expense: expense, net: income - expense, count: count, sales: sales, incomes: incomes, expenses: expenses, closings: closings };
+  return { income: income, expense: expense, personalYai: personalYai, personalSing: personalSing, net: income - expense - personalYai - personalSing, count: count, sales: sales, incomes: incomes, expenses: sharedExpenses, closings: closings };
 }
 /** ແບ່ງລາຍຈ່າຍທັງໝົດ (ໃນໄລຍະເວລາທີ່ເລືອກ) ອອກ 2 ສ່ວນເທົ່າກັນ ແລ້ວເອົາຍອດຂາຍທີ່ແຍກຕາມ "ໝວດສິນຄ້າ" Yai/Sing (ອັດຕະໂນມັດ, ບໍ່ຕ້ອງພິມ — ອັບເດດຮອບ 15) ມາລົບອອກ ເພື່ອເບິ່ງວ່າແຕ່ລະຄົນຍັງເຫຼືອ/ຂາດຈັກເທົ່າ — ແລະ ສະຫຼຸບລວມ Yai+Sing ພ້ອມແຍກສົດ/ໂອນ. ສົດ/ໂອນ ແຍກຕາມສັດສ່ວນ PaymentType/CashAmount/TransferAmount ຂອງແຕ່ລະບິນ. ຍັງນັບລາຍຮັບທີ່ບັນທຶກເອງ (ຊີດ Incomes) ທີ່ຕັ້ງໝວດ "Yai"/"Sing" ນຳ (ຖ້າມີ) */
 function renderDashSplitCard(cur, catById, itemsBySale){
@@ -3339,16 +3370,17 @@ function renderDashSplitCard(cur, catById, itemsBySale){
   });
   var yaiIncome = yaiCash + yaiTransfer;
   var singIncome = singCash + singTransfer;
-  var yaiNet = yaiIncome - halfExpense;
-  var singNet = singIncome - halfExpense;
+  var yaiPersonal = cur.personalYai || 0, singPersonal = cur.personalSing || 0;
+  var yaiNet = yaiIncome - halfExpense - yaiPersonal;
+  var singNet = singIncome - halfExpense - singPersonal;
   var totalCash = yaiCash + singCash;
   var totalTransfer = yaiTransfer + singTransfer;
   var combinedNet = yaiNet + singNet;
   box.innerHTML =
-    '<div class="scard" style="margin-bottom:8px"><div class="label">💸 ລາຍຈ່າຍທັງໝົດ ÷ 2 (ຕໍ່ຄົນ)</div><div class="val">' + fmt(totalExpense) + ' ÷ 2 = ' + fmt(halfExpense) + ' ກີບ</div></div>' +
+    '<div class="scard" style="margin-bottom:8px"><div class="label">💸 ລາຍຈ່າຍລວມ ÷ 2 (ຕໍ່ຄົນ) — ບໍ່ນັບລາຍຈ່າຍສ່ວນຕົວ</div><div class="val">' + fmt(totalExpense) + ' ÷ 2 = ' + fmt(halfExpense) + ' ກີບ</div></div>' +
     '<div class="gauge-row" style="grid-template-columns:repeat(2,1fr)">' +
-      '<div class="scard ' + (yaiNet < 0 ? 'neg' : 'net') + '"><div class="label">👤 Yai — ສົດ ' + fmt(yaiCash) + ' + ໂອນ ' + fmt(yaiTransfer) + ' = ' + fmt(yaiIncome) + ' − ລາຍຈ່າຍ÷2</div><div class="val">' + fmt(yaiNet) + ' ກີບ</div></div>' +
-      '<div class="scard ' + (singNet < 0 ? 'neg' : 'net') + '"><div class="label">👤 Sing — ສົດ ' + fmt(singCash) + ' + ໂອນ ' + fmt(singTransfer) + ' = ' + fmt(singIncome) + ' − ລາຍຈ່າຍ÷2</div><div class="val">' + fmt(singNet) + ' ກີບ</div></div>' +
+      '<div class="scard ' + (yaiNet < 0 ? 'neg' : 'net') + '"><div class="label">👤 Yai — ສົດ ' + fmt(yaiCash) + ' + ໂອນ ' + fmt(yaiTransfer) + ' = ' + fmt(yaiIncome) + ' − ລາຍຈ່າຍ÷2' + (yaiPersonal ? ' − ສ່ວນຕົວ ' + fmt(yaiPersonal) : '') + '</div><div class="val">' + fmt(yaiNet) + ' ກີບ</div></div>' +
+      '<div class="scard ' + (singNet < 0 ? 'neg' : 'net') + '"><div class="label">👤 Sing — ສົດ ' + fmt(singCash) + ' + ໂອນ ' + fmt(singTransfer) + ' = ' + fmt(singIncome) + ' − ລາຍຈ່າຍ÷2' + (singPersonal ? ' − ສ່ວນຕົວ ' + fmt(singPersonal) : '') + '</div><div class="val">' + fmt(singNet) + ' ກີບ</div></div>' +
     '</div>' +
     '<div class="scard ' + (combinedNet < 0 ? 'neg' : 'net') + '" style="margin-top:8px"><div class="label">🤝 Yai + Sing — ສົດ ' + fmt(totalCash) + ' + ໂອນ ' + fmt(totalTransfer) + '</div><div class="val">' + fmt(yaiNet) + ' + ' + fmt(singNet) + ' = ' + fmt(combinedNet) + ' ກີບ</div></div>';
 }
